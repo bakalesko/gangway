@@ -49,6 +49,7 @@ const Index = () => {
     type: "success" | "error";
     message: string;
   } | null>(null);
+  const [errorLogs, setErrorLogs] = useState<string[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
