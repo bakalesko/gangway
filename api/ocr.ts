@@ -1,7 +1,15 @@
 import { VercelRequest, VercelResponse } from "@vercel/node";
-import { ImageAnnotatorClient } from "@google-cloud/vision";
 import { IncomingForm } from "formidable";
 import fs from "fs";
+
+// Dynamic import for Google Cloud Vision to handle potential missing dependencies
+let ImageAnnotatorClient: any = null;
+try {
+  const vision = require("@google-cloud/vision");
+  ImageAnnotatorClient = vision.ImageAnnotatorClient;
+} catch (error) {
+  console.warn("Google Cloud Vision not available:", error.message);
+}
 
 // Disable body parsing for multipart/form-data
 export const config = {
