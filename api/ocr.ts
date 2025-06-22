@@ -281,7 +281,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    console.log("Processing file:", file.originalFilename, "Size:", file.size);
+    console.log(
+      "Processing file:",
+      file.originalFilename,
+      "Size:",
+      file.size,
+      "Expected dimensions:",
+      `${expectedColumns}x${expectedRows}`,
+    );
 
     let extractedText = "";
     let useRealAPI = false;
