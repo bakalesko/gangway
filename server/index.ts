@@ -458,72 +458,50 @@ function parseTextToTable(
               interpolated: false,
             };
           } else {
-            // Smart OCR number extraction
+            // Simple and effective OCR number extraction
             let extractedNumber: string | null = null;
 
-            // Clean up common OCR errors
-            let cleanedValue = cellValue
-              .replace(/[oO]/g, "0") // Replace O with 0
-              .replace(/[lI]/g, "1") // Replace l,I with 1
-              .replace(/\s+/g, "") // Remove spaces
+            // Remove common OCR artifacts and clean up
+            let cleaned = cellValue
+              .replace(/[oO]/g, "0")
+              .replace(/[lI]/g, "1")
+              .replace(/\s+/g, "")
               .trim();
 
-            // Handle dash-separated values (common OCR error like "0.5-154" or "3500-59")
-            if (cleanedValue.includes("-") && !cleanedValue.startsWith("-")) {
-              const parts = cleanedValue.split("-");
-
-              // Strategy: Take the most reasonable number
-              let bestPart = null;
-              let bestScore = -1;
-
-              for (const part of parts) {
-                if (part && isValidNumber(part)) {
-                  // Score based on reasonable range and length
-                  let score = 0;
-                  const num = parseFloat(part);
-
-                  // Prefer numbers in reasonable lab value ranges
-                  if (num >= 0 && num <= 1000) score += 10;
-                  if (num >= 0 && num <= 100) score += 5;
-                  if (part.length <= 4) score += 5; // Prefer shorter numbers
-                  if (part.includes(".") && part.split(".")[1].length <= 2)
-                    score += 3; // Reasonable decimals
-
-                  if (score > bestScore) {
-                    bestScore = score;
-                    bestPart = part;
+            // Priority 1: Simple decimal (like "0.5", "12.6")
+            let match = cleaned.match(/^\d+\.\d{1,2}$/);
+            if (match) {
+              extractedNumber = match[0];
+            }
+            // Priority 2: Simple integer (like "154", "37")
+            else {
+              match = cleaned.match(/^\d{1,4}$/);
+              if (match) {
+                extractedNumber = match[0];
+              }
+              // Priority 3: Take first reasonable number from complex strings
+              else {
+                // For dash-separated like "0.5-154", take the first part
+                if (cleaned.includes("-") && !cleaned.startsWith("-")) {
+                  const firstPart = cleaned.split("-")[0];
+                  if (
+                    firstPart &&
+                    isValidNumber(firstPart) &&
+                    firstPart.length <= 5
+                  ) {
+                    extractedNumber = firstPart;
                   }
                 }
-              }
-
-              if (bestPart) {
-                extractedNumber = bestPart;
-              }
-            }
-            // Handle period-separated large numbers (might be OCR combining numbers)
-            else if (cleanedValue.includes(".") && cleanedValue.length > 6) {
-              const beforeDot = cleanedValue.split(".")[0];
-              const afterDot = cleanedValue.split(".")[1];
-
-              // If the part after dot is very long, it might be OCR error
-              if (afterDot && afterDot.length > 3) {
-                extractedNumber = beforeDot; // Take the integer part
-              } else {
-                extractedNumber = cleanedValue; // Keep the decimal
-              }
-            }
-            // Simple cases
-            else if (isValidNumber(cleanedValue)) {
-              extractedNumber = cleanedValue;
-            }
-            // Last resort: extract first reasonable number
-            else {
-              const matches = cleanedValue.match(/\d+\.?\d*/g);
-              if (matches) {
-                for (const match of matches) {
-                  if (match.length <= 6 && isValidNumber(match)) {
-                    extractedNumber = match;
-                    break;
+                // For other complex cases, take first valid number
+                else {
+                  const numbers = cleaned.match(/\d+\.?\d*/g);
+                  if (numbers) {
+                    for (const num of numbers) {
+                      if (num.length <= 5 && isValidNumber(num)) {
+                        extractedNumber = num;
+                        break;
+                      }
+                    }
                   }
                 }
               }
