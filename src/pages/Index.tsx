@@ -509,31 +509,13 @@ const Index = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <InteractiveTable
+              <SimpleTable
                 headers={tableData.headers}
                 rows={tableData.rows}
                 onCellChange={updateCellValue}
+                onCopyTable={copyTableToClipboard}
+                onDownloadExcel={downloadAsExcel}
               />
-
-              <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded"></div>
-                  <span>Interpolated values</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-background border border-border rounded"></div>
-                  <span>Original values</span>
-                </div>
-                <div className="ml-auto text-xs">
-                  📊 {tableData.rows.length} rows × {tableData.headers.length}{" "}
-                  columns •{" "}
-                  {
-                    tableData.rows.flat().filter((cell) => cell.interpolated)
-                      .length
-                  }{" "}
-                  interpolated
-                </div>
-              </div>
             </CardContent>
           </Card>
         )}
