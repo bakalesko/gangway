@@ -58,6 +58,10 @@ const Index = () => {
   const [expectedColumns, setExpectedColumns] = useState(13);
   const [expectedRows, setExpectedRows] = useState(24);
 
+  // First and last row anchor values for better interpolation
+  const [firstRowValues, setFirstRowValues] = useState("");
+  const [lastRowValues, setLastRowValues] = useState("");
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check system status
