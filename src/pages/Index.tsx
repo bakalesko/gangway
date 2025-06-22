@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { InteractiveTable } from "@/components/interactive-table";
+import { SimpleTable } from "@/components/simple-table";
 import {
   Upload,
   Download,
