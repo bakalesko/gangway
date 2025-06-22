@@ -178,6 +178,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     let extractedText = "";
     let useRealAPI = false;
+    let visionError = "";
 
     // Debug environment variables
     console.log("Environment check:");
@@ -250,21 +251,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.log("⚠️ No text detected in the image");
         throw new Error("No text detected in image");
       }
-    } catch (visionError) {
-      console.error("❌ Google Cloud Vision error:", visionError.message);
-      console.error("📜 Full error:", visionError);
-      console.log("🔄 Falling back to mock data");
+    } catch (error) {
+      visionError =
+        error instanceof Error ? error.message : "Unknown Vision API error";
+      console.error("❌ Google Cloud Vision error:", visionError);
+      console.error("📜 Full error:", error);
     }
 
-    // Fallback to enhanced mock data if no text extracted
-    if (!extractedText.trim()) {
-      console.log("Using enhanced mock data for demonstration");
-      extractedText = `Sample ID\tpH Level\tTemperature (°C)\tConcentration\tNotes
-S001\t7.2\t25.4\t0.5 mg/L\tNormal range
-S002\t\t24.1\t0.7 mg/L\tSlightly elevated
-S003\t7.0\t\t0.4 mg/L\tWithin range
-S004\t6.8\t26.2\t\tHigh temperature
-S005\t7.1\t25.0\t0.6 mg/L\tOptimal conditions`;
+    // If Google Vision API failed, return error instead of mock data
+    if (!useRealAPI) {
+      const debugInfo = {
+        environment: process.env.NODE_ENV || "unknown",
+        vercel: !!process.env.VERCEL,
+        credentialsFound: !!process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64,
+        credentialsLength:
+          process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64?.length || 0,
+        useRealAPI: false,
+        extractedTextLength: 0,
+        error: visionError,
+      };
+
+      return res.status(422).json({
+        error: "Google Vision API is not available",
+        details: visionError,
+        debug: debugInfo,
+      });
     }
 
     // Parse the extracted text into a structured table
