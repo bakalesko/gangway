@@ -20,6 +20,8 @@ import {
   Loader2,
   Settings,
   MousePointer,
+  Plus,
+  Minus,
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -591,7 +593,7 @@ const Index = () => {
 
               <div className="mt-4 text-xs text-muted-foreground">
                 📊 {tableData.rows.length} rows × {tableData.headers.length}{" "}
-                columns ���{" "}
+                columns •{" "}
                 {
                   tableData.rows.flat().filter((cell) => cell.interpolated)
                     .length
