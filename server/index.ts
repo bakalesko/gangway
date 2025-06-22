@@ -42,7 +42,7 @@ try {
 
     const credentialsJson = Buffer.from(
       process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64,
-      "base64",
+      "base64"
     ).toString("utf-8");
 
     const credentials = JSON.parse(credentialsJson);
@@ -51,9 +51,7 @@ try {
     visionClient = new ImageAnnotatorClient({
       credentials: credentials,
     });
-    console.log(
-      "✅ Google Cloud Vision client initialized successfully with base64 credentials",
-    );
+    console.log("✅ Google Cloud Vision client initialized successfully with base64 credentials");
   } else {
     // Fallback to file-based credentials
     const credentialsPath =
@@ -64,9 +62,7 @@ try {
       visionClient = new ImageAnnotatorClient({
         keyFilename: credentialsPath,
       });
-      console.log(
-        "✅ Google Cloud Vision client initialized successfully with file credentials",
-      );
+      console.log("✅ Google Cloud Vision client initialized successfully with file credentials");
     } else {
       console.warn(
         "⚠️ Google Cloud Vision credentials not found. API will return errors for OCR requests.",
@@ -109,12 +105,9 @@ function interpolateValue(
   const lastAnchorValue = lastRowAnchor?.[colIndex];
 
   // Advanced numeric interpolation with pattern analysis
-  if (
-    firstAnchorValue &&
-    lastAnchorValue &&
-    isValidNumber(firstAnchorValue) &&
-    isValidNumber(lastAnchorValue)
-  ) {
+  if (firstAnchorValue && lastAnchorValue &&
+      isValidNumber(firstAnchorValue) && isValidNumber(lastAnchorValue)) {
+
     const firstNum = parseFloat(cleanNumericValue(firstAnchorValue));
     const lastNum = parseFloat(cleanNumericValue(lastAnchorValue));
 
@@ -124,23 +117,19 @@ function interpolateValue(
       const lastStr = lastAnchorValue.trim();
 
       // Determine if numbers are integers or decimals
-      const isDecimal = firstStr.includes(".") || lastStr.includes(".");
+      const isDecimal = firstStr.includes('.') || lastStr.includes('.');
 
       // Determine decimal places (if decimal)
       let decimalPlaces = 0;
       if (isDecimal) {
-        const firstDecimals = firstStr.includes(".")
-          ? firstStr.split(".")[1]?.length || 0
-          : 0;
-        const lastDecimals = lastStr.includes(".")
-          ? lastStr.split(".")[1]?.length || 0
-          : 0;
+        const firstDecimals = firstStr.includes('.') ? firstStr.split('.')[1]?.length || 0 : 0;
+        const lastDecimals = lastStr.includes('.') ? lastStr.split('.')[1]?.length || 0 : 0;
         decimalPlaces = Math.max(firstDecimals, lastDecimals);
       }
 
       // Determine minimum digit count (for zero-padding)
-      const firstDigits = firstStr.replace(/[^0-9]/g, "").length;
-      const lastDigits = lastStr.replace(/[^0-9]/g, "").length;
+      const firstDigits = firstStr.replace(/[^0-9]/g, '').length;
+      const lastDigits = lastStr.replace(/[^0-9]/g, '').length;
       const minDigits = Math.max(firstDigits, lastDigits);
 
       // Progressive interpolation based on row position
@@ -163,20 +152,13 @@ function interpolateValue(
           const lastIntStr = Math.round(lastNum).toString();
 
           // If first number has more digits than last, pad the result
-          if (
-            firstIntStr.length > lastIntStr.length &&
-            firstIntStr.length > 1
-          ) {
-            formattedValue = intValue
-              .toString()
-              .padStart(firstIntStr.length, "0");
+          if (firstIntStr.length > lastIntStr.length && firstIntStr.length > 1) {
+            formattedValue = intValue.toString().padStart(firstIntStr.length, '0');
           }
         }
       }
 
-      console.log(
-        `🎯 Smart interpolation for row ${rowIndex}, col ${colIndex}: ${formattedValue} (pattern: ${isDecimal ? "decimal" : "integer"}, digits: ${minDigits})`,
-      );
+      console.log(`🎯 Smart interpolation for row ${rowIndex}, col ${colIndex}: ${formattedValue} (pattern: ${isDecimal ? 'decimal' : 'integer'}, digits: ${minDigits})`);
       return formattedValue;
     }
   }
@@ -215,15 +197,11 @@ function interpolateValue(
       const aboveStr = above.trim();
       const belowStr = below.trim();
 
-      const isDecimal = aboveStr.includes(".") || belowStr.includes(".");
+      const isDecimal = aboveStr.includes('.') || belowStr.includes('.');
       let decimalPlaces = 0;
       if (isDecimal) {
-        const aboveDecimals = aboveStr.includes(".")
-          ? aboveStr.split(".")[1]?.length || 0
-          : 0;
-        const belowDecimals = belowStr.includes(".")
-          ? belowStr.split(".")[1]?.length || 0
-          : 0;
+        const aboveDecimals = aboveStr.includes('.') ? aboveStr.split('.')[1]?.length || 0 : 0;
+        const belowDecimals = belowStr.includes('.') ? belowStr.split('.')[1]?.length || 0 : 0;
         decimalPlaces = Math.max(aboveDecimals, belowDecimals);
       }
 
@@ -247,33 +225,24 @@ function interpolateValue(
         const belowIntStr = Math.round(belowNum).toString();
         const maxLength = Math.max(aboveIntStr.length, belowIntStr.length);
 
-        if (
-          maxLength > 1 &&
-          (aboveStr.startsWith("0") || belowStr.startsWith("0"))
-        ) {
-          formattedValue = intValue.toString().padStart(maxLength, "0");
+        if (maxLength > 1 && (aboveStr.startsWith('0') || belowStr.startsWith('0'))) {
+          formattedValue = intValue.toString().padStart(maxLength, '0');
         }
       }
 
-      console.log(
-        `📈 Pattern interpolation for row ${rowIndex}, col ${colIndex}: ${formattedValue}`,
-      );
+      console.log(`📈 Pattern interpolation for row ${rowIndex}, col ${colIndex}: ${formattedValue}`);
       return formattedValue;
     }
   }
 
   // Use anchor values as fallback
   if (firstAnchorValue && isValidNumber(firstAnchorValue)) {
-    console.log(
-      `⚓ Using first anchor for row ${rowIndex}, col ${colIndex}: ${firstAnchorValue}`,
-    );
+    console.log(`⚓ Using first anchor for row ${rowIndex}, col ${colIndex}: ${firstAnchorValue}`);
     return cleanNumericValue(firstAnchorValue);
   }
 
   if (lastAnchorValue && isValidNumber(lastAnchorValue)) {
-    console.log(
-      `⚓ Using last anchor for row ${rowIndex}, col ${colIndex}: ${lastAnchorValue}`,
-    );
+    console.log(`⚓ Using last anchor for row ${rowIndex}, col ${colIndex}: ${lastAnchorValue}`);
     return cleanNumericValue(lastAnchorValue);
   }
 
@@ -291,11 +260,9 @@ function parseTextToTable(
   expectedCols: number = 13,
   expectedRows: number = 24,
   firstRowValues?: string,
-  lastRowValues?: string,
+  lastRowValues?: string
 ): TableCell[][] {
-  console.log(
-    `🎯 Parsing table with expected dimensions: ${expectedCols} columns x ${expectedRows} rows`,
-  );
+  console.log(`🎯 Parsing table with expected dimensions: ${expectedCols} columns x ${expectedRows} rows`);
 
   // Parse anchor rows if provided
   let firstRowAnchor: string[] | undefined;
@@ -304,17 +271,17 @@ function parseTextToTable(
   if (firstRowValues) {
     firstRowAnchor = firstRowValues
       .split(/[,\s]+/)
-      .map((v) => v.trim())
-      .filter((v) => v.length > 0);
-    console.log(`⚓ First row anchor: [${firstRowAnchor.join(", ")}]`);
+      .map(v => v.trim())
+      .filter(v => v.length > 0);
+    console.log(`⚓ First row anchor: [${firstRowAnchor.join(', ')}]`);
   }
 
   if (lastRowValues) {
     lastRowAnchor = lastRowValues
       .split(/[,\s]+/)
-      .map((v) => v.trim())
-      .filter((v) => v.length > 0);
-    console.log(`⚓ Last row anchor: [${lastRowAnchor.join(", ")}]`);
+      .map(v => v.trim())
+      .filter(v => v.length > 0);
+    console.log(`⚓ Last row anchor: [${lastRowAnchor.join(', ')}]`);
   }
 
   const lines = text.split("\n").filter((line) => line.trim().length > 0);
@@ -338,11 +305,8 @@ function parseTextToTable(
 
   // Strategy 2: If we don't have enough columns, try single space separation
   const maxColsFound = Math.max(...rawTable.map((row) => row.length));
-  if (maxColsFound < expectedCols * 0.7) {
-    // If we have less than 70% of expected columns
-    console.log(
-      `🔄 Switching to single-space parsing strategy (found ${maxColsFound}/${expectedCols} columns)`,
-    );
+  if (maxColsFound < expectedCols * 0.7) { // If we have less than 70% of expected columns
+    console.log(`🔄 Switching to single-space parsing strategy (found ${maxColsFound}/${expectedCols} columns)`);
     parseStrategy = "single-spaces";
     rawTable.length = 0; // Clear previous results
 
@@ -358,9 +322,7 @@ function parseTextToTable(
     }
   }
 
-  console.log(
-    `📊 Parse strategy: ${parseStrategy}, found ${rawTable.length} rows`,
-  );
+  console.log(`📊 Parse strategy: ${parseStrategy}, found ${rawTable.length} rows`);
 
   if (rawTable.length === 0) {
     console.log("⚠️ No table data found, creating empty structure");
@@ -371,15 +333,11 @@ function parseTextToTable(
   const targetCols = expectedCols;
   const targetRows = expectedRows; // Force exact row count
 
-  console.log(
-    `🎯 Target structure: ${targetCols} columns x ${targetRows} rows`,
-  );
+  console.log(`🎯 Target structure: ${targetCols} columns x ${targetRows} rows`);
 
   // Take only the first targetRows from rawTable (strict limit)
   const limitedRawTable = rawTable.slice(0, targetRows);
-  console.log(
-    `📏 Limited raw table to ${limitedRawTable.length} rows (max: ${targetRows})`,
-  );
+  console.log(`📏 Limited raw table to ${limitedRawTable.length} rows (max: ${targetRows})`);
 
   // Initialize the normalized table with exact dimensions
   const normalizedTable: (TableCell | null)[][] = [];
@@ -390,24 +348,15 @@ function parseTextToTable(
 
     for (let colIndex = 0; colIndex < targetCols; colIndex++) {
       // Take only the first targetCols from each row (strict limit)
-      let cellValue =
-        colIndex < sourceRow.length ? sourceRow[colIndex] : undefined;
+      let cellValue = colIndex < sourceRow.length ? sourceRow[colIndex] : undefined;
 
       // Override with anchor values for first and last rows if provided
       if (rowIndex === 0 && firstRowAnchor && firstRowAnchor[colIndex]) {
         cellValue = firstRowAnchor[colIndex];
-        console.log(
-          `🎯 Using first row anchor for [0,${colIndex}]: ${cellValue}`,
-        );
-      } else if (
-        rowIndex === targetRows - 1 &&
-        lastRowAnchor &&
-        lastRowAnchor[colIndex]
-      ) {
+        console.log(`🎯 Using first row anchor for [0,${colIndex}]: ${cellValue}`);
+      } else if (rowIndex === targetRows - 1 && lastRowAnchor && lastRowAnchor[colIndex]) {
         cellValue = lastRowAnchor[colIndex];
-        console.log(
-          `🎯 Using last row anchor for [${rowIndex},${colIndex}]: ${cellValue}`,
-        );
+        console.log(`🎯 Using last row anchor for [${rowIndex},${colIndex}]: ${cellValue}`);
       }
 
       if (cellValue && cellValue.trim()) {
@@ -444,9 +393,22 @@ function parseTextToTable(
     normalizedTable.push(row);
   }
 
-  // Enhanced interpolation for missing values
+  // Enhanced interpolation for missing values with missing row detection
   console.log("🔧 Interpolating missing values...");
   let interpolatedCount = 0;
+  let missingRowCount = 0;
+
+  // First, detect entirely missing rows
+  const missingRows = new Set<number>();
+  for (let rowIndex = 1; rowIndex < normalizedTable.length - 1; rowIndex++) { // Skip header and last row
+    const row = normalizedTable[rowIndex];
+    const hasAnyValue = row.some(cell => cell && !cell.interpolated);
+    if (!hasAnyValue) {
+      missingRows.add(rowIndex);
+      missingRowCount++;
+      console.log(`🔍 Detected missing row: ${rowIndex}`);
+    }
+  }
 
   for (let rowIndex = 0; rowIndex < normalizedTable.length; rowIndex++) {
     for (let colIndex = 0; colIndex < targetCols; colIndex++) {
@@ -458,14 +420,34 @@ function parseTextToTable(
           firstRowAnchor,
           lastRowAnchor,
         );
+
+        // Round to 1 decimal place if anchor rows have decimals
+        let finalValue = interpolatedValue;
+        if (firstRowAnchor && lastRowAnchor &&
+            firstRowAnchor[colIndex] && lastRowAnchor[colIndex] &&
+            isValidNumber(firstRowAnchor[colIndex]) && isValidNumber(lastRowAnchor[colIndex])) {
+          const firstHasDecimal = firstRowAnchor[colIndex].includes('.');
+          const lastHasDecimal = lastRowAnchor[colIndex].includes('.');
+          if (firstHasDecimal || lastHasDecimal) {
+            const numValue = parseFloat(finalValue);
+            if (!isNaN(numValue)) {
+              finalValue = numValue.toFixed(1);
+            }
+          }
+        }
+
         normalizedTable[rowIndex][colIndex] = {
-          value: interpolatedValue,
+          value: finalValue,
           interpolated: true,
+          missingRow: missingRows.has(rowIndex), // Mark if entire row is missing
         };
         interpolatedCount++;
       }
     }
   }
+
+  console.log(`✅ Interpolated ${interpolatedCount} missing cells, ${missingRowCount} missing rows`);
+}
 
   console.log(`✅ Interpolated ${interpolatedCount} missing cells`);
 
@@ -474,9 +456,7 @@ function parseTextToTable(
     row.filter((cell): cell is TableCell => cell !== null),
   );
 
-  console.log(
-    `📋 Final table: ${finalTable.length} rows x ${finalTable[0]?.length || 0} columns`,
-  );
+  console.log(`📋 Final table: ${finalTable.length} rows x ${finalTable[0]?.length || 0} columns`);
   return finalTable;
 }
 
@@ -552,19 +532,14 @@ app.post("/api/ocr", upload.single("file"), async (req, res) => {
         if (detections && detections.length > 0 && detections[0].description) {
           extractedText = detections[0].description;
           useRealAPI = true;
-          console.log(
-            "✅ SUCCESS: Extracted",
-            extractedText.length,
-            "characters",
-          );
+          console.log("✅ SUCCESS: Extracted", extractedText.length, "characters");
           console.log("📝 First 200 chars:", extractedText.substring(0, 200));
         } else {
           console.log("⚠️ No text detected in the image");
           visionError = "No text detected in image";
         }
       } catch (error) {
-        visionError =
-          error instanceof Error ? error.message : "Unknown Vision API error";
+        visionError = error instanceof Error ? error.message : "Unknown Vision API error";
         console.error("❌ Google Cloud Vision error:", visionError);
       }
     } else {
@@ -577,8 +552,7 @@ app.post("/api/ocr", upload.single("file"), async (req, res) => {
       const debugInfo = {
         environment: process.env.NODE_ENV || "unknown",
         credentialsFound: !!process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64,
-        credentialsLength:
-          process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64?.length || 0,
+        credentialsLength: process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64?.length || 0,
         useRealAPI: false,
         extractedTextLength: 0,
         error: visionError,
@@ -592,13 +566,7 @@ app.post("/api/ocr", upload.single("file"), async (req, res) => {
     }
 
     // Parse the extracted text into a structured table with user-specified dimensions and anchor rows
-    const tableData = parseTextToTable(
-      extractedText,
-      expectedColumns,
-      expectedRows,
-      firstRowValues,
-      lastRowValues,
-    );
+    const tableData = parseTextToTable(extractedText, expectedColumns, expectedRows, firstRowValues, lastRowValues);
 
     console.log("Extracted table data:", JSON.stringify(tableData, null, 2));
 
@@ -606,8 +574,7 @@ app.post("/api/ocr", upload.single("file"), async (req, res) => {
     const debugInfo = {
       environment: process.env.NODE_ENV || "unknown",
       credentialsFound: !!process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64,
-      credentialsLength:
-        process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64?.length || 0,
+      credentialsLength: process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64?.length || 0,
       useRealAPI: true,
       extractedTextLength: extractedText.length,
       error: null,
@@ -766,18 +733,9 @@ app.post("/api/export", async (req, res) => {
   } catch (error) {
     console.error("❌ Export error details:", error);
     console.error("❌ Error type:", typeof error);
-    console.error(
-      "❌ Error name:",
-      error instanceof Error ? error.name : "Unknown",
-    );
-    console.error(
-      "❌ Error message:",
-      error instanceof Error ? error.message : "Unknown",
-    );
-    console.error(
-      "❌ Error stack:",
-      error instanceof Error ? error.stack : "No stack",
-    );
+    console.error("❌ Error name:", error instanceof Error ? error.name : "Unknown");
+    console.error("❌ Error message:", error instanceof Error ? error.message : "Unknown");
+    console.error("❌ Error stack:", error instanceof Error ? error.stack : "No stack");
 
     // Handle specific error types
     if (error instanceof SyntaxError) {
