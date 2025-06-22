@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import fs from "fs";
+import { createApiMiddleware } from "./vite-api-middleware";
 
 // Function to read and clean base64 credentials
 function getCleanedBase64Credentials(): string | undefined {
@@ -38,6 +39,7 @@ export default defineConfig(({ mode }) => {
     server: {
       host: "::",
       port: 8080,
+      middlewareMode: false,
     },
     plugins: [react()],
     resolve: {
