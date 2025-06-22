@@ -195,11 +195,13 @@ function interpolateValue(
   return "0";
 }
 
-// Helper function to parse text into structured table with fixed dimensions
+// Helper function to parse text into structured table with fixed dimensions and anchor rows
 function parseTextToTable(
   text: string,
   expectedCols: number = 13,
   expectedRows: number = 24,
+  firstRowValues?: string,
+  lastRowValues?: string,
 ): TableCell[][] {
   console.log(
     `🎯 Parsing table with expected dimensions: ${expectedCols} columns x ${expectedRows} rows`,
@@ -329,7 +331,7 @@ function parseTextToTable(
 
 // Helper function to create empty table structure
 function createEmptyTable(cols: number, rows: number): TableCell[][] {
-  console.log(`���� Creating empty table structure: ${cols}x${rows}`);
+  console.log(`📝 Creating empty table structure: ${cols}x${rows}`);
   const table: TableCell[][] = [];
 
   // Create header row
