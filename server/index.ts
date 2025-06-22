@@ -207,6 +207,26 @@ function parseTextToTable(
     `🎯 Parsing table with expected dimensions: ${expectedCols} columns x ${expectedRows} rows`,
   );
 
+  // Parse anchor rows if provided
+  let firstRowAnchor: string[] | undefined;
+  let lastRowAnchor: string[] | undefined;
+
+  if (firstRowValues) {
+    firstRowAnchor = firstRowValues
+      .split(/[,\s]+/)
+      .map((v) => v.trim())
+      .filter((v) => v.length > 0);
+    console.log(`⚓ First row anchor: [${firstRowAnchor.join(", ")}]`);
+  }
+
+  if (lastRowValues) {
+    lastRowAnchor = lastRowValues
+      .split(/[,\s]+/)
+      .map((v) => v.trim())
+      .filter((v) => v.length > 0);
+    console.log(`⚓ Last row anchor: [${lastRowAnchor.join(", ")}]`);
+  }
+
   const lines = text.split("\n").filter((line) => line.trim().length > 0);
   console.log(`📝 Found ${lines.length} non-empty lines in OCR text`);
 
