@@ -109,6 +109,7 @@ const Index = () => {
     setAlertMessage(null);
 
     try {
+      // Try to use the API endpoint first
       const formData = new FormData();
       formData.append("file", selectedFile);
 
@@ -117,19 +118,29 @@ const Index = () => {
         body: formData,
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to scan image");
-      }
+      if (response.ok) {
+        const data = await response.json();
+        setTableData(data);
 
-      const data = await response.json();
-      setTableData(data);
-      setAlertMessage({
-        type: "success",
-        message: "Image scanned successfully!",
-      });
+        // Create detailed debug message
+        let message = "";
+        if (data.source === "Google Vision API") {
+          message = "✅ Image scanned successfully with Google Vision API!";
+        } else {
+          const debug = data.debug || {};
+          message = `📊 Demo: Using mock data. Debug: Credentials=${debug.credentialsFound ? "Found" : "Missing"} (${debug.credentialsLength} chars), Vercel=${debug.vercel}, API=${debug.useRealAPI}, TextLen=${debug.extractedTextLength}`;
+        }
+
+        setAlertMessage({
+          type: "success",
+          message: message,
+        });
+      } else {
+        throw new Error("API not available");
+      }
     } catch (error) {
       console.error("OCR Error:", error);
-      // For demo purposes, use mock data
+      // Fallback to enhanced mock data
       const mockData: TableData = {
         headers: [
           "Sample ID",
@@ -140,32 +151,39 @@ const Index = () => {
         ],
         rows: [
           [
-            { value: "S001" },
+            { value: "S001", interpolated: false },
             { value: "7.2", interpolated: true },
-            { value: "25.4" },
-            { value: "0.5 mg/L" },
-            { value: "Normal range" },
+            { value: "25.4", interpolated: false },
+            { value: "0.5 mg/L", interpolated: false },
+            { value: "Normal range", interpolated: false },
           ],
           [
-            { value: "S002" },
-            { value: "6.8" },
+            { value: "S002", interpolated: false },
+            { value: "6.8", interpolated: false },
             { value: "24.1", interpolated: true },
-            { value: "0.7 mg/L" },
-            { value: "Slightly elevated" },
+            { value: "0.7 mg/L", interpolated: false },
+            { value: "Slightly elevated", interpolated: false },
           ],
           [
-            { value: "S003" },
-            { value: "7.0" },
-            { value: "25.8" },
+            { value: "S003", interpolated: false },
+            { value: "7.0", interpolated: false },
+            { value: "25.8", interpolated: false },
             { value: "0.4 mg/L", interpolated: true },
-            { value: "Within range" },
+            { value: "Within range", interpolated: false },
+          ],
+          [
+            { value: "S004", interpolated: false },
+            { value: "6.9", interpolated: true },
+            { value: "26.2", interpolated: false },
+            { value: "0.6 mg/L", interpolated: true },
+            { value: "High temp", interpolated: false },
           ],
         ],
       };
       setTableData(mockData);
       setAlertMessage({
         type: "success",
-        message: "Demo: Mock data loaded successfully!",
+        message: "Demo: Enhanced mock data loaded (API not configured yet)",
       });
     } finally {
       setIsScanning(false);

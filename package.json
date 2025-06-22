@@ -7,9 +7,14 @@
     "build": "vite build",
     "test": "vitest --run",
     "format.fix": "prettier --write .",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "api": "node dev-server.js"
   },
   "dependencies": {
+    "@google-cloud/vision": "^4.3.2",
+    "@vercel/node": "^3.0.21",
+    "exceljs": "^4.4.0",
+    "formidable": "^3.5.1",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",
@@ -64,6 +69,7 @@
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.15",
+    "@types/formidable": "^3.4.5",
     "@types/node": "^22.5.5",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
