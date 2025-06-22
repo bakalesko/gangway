@@ -379,9 +379,12 @@ app.post("/api/ocr", upload.single("file"), async (req, res) => {
       });
     }
 
-    // Parse the extracted text into a structured table with fixed dimensions
-    // Default to 13 columns x 24 rows as requested by user
-    const tableData = parseTextToTable(extractedText, 13, 24);
+    // Parse the extracted text into a structured table with user-specified dimensions
+    const tableData = parseTextToTable(
+      extractedText,
+      expectedColumns,
+      expectedRows,
+    );
 
     console.log("Extracted table data:", JSON.stringify(tableData, null, 2));
 
