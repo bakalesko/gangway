@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 interface TableCell {
   value: string;
   interpolated?: boolean;
+  missingRow?: boolean; // Mark entire missing rows
 }
 
 interface TableData {
