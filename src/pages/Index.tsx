@@ -564,6 +564,10 @@ const Index = () => {
                     </>
                   )}
                 </Button>
+                <Button onClick={resetTableSizing} variant="outline" size="sm">
+                  <RotateCcw className="h-4 w-4 mr-1" />
+                  Reset Sizes
+                </Button>
               </div>
 
               {/* Column Width Controls */}
