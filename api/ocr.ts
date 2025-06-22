@@ -304,15 +304,23 @@ function parseTextToTable(
     `🎯 Target structure: ${targetCols} columns x ${targetRows} rows`,
   );
 
+  // Take only the first targetRows from rawTable (strict limit)
+  const limitedRawTable = rawTable.slice(0, targetRows);
+  console.log(
+    `📏 Limited raw table to ${limitedRawTable.length} rows (max: ${targetRows})`,
+  );
+
   // Initialize the normalized table with exact dimensions
   const normalizedTable: (TableCell | null)[][] = [];
 
   for (let rowIndex = 0; rowIndex < targetRows; rowIndex++) {
     const row: (TableCell | null)[] = [];
-    const sourceRow = rawTable[rowIndex] || [];
+    const sourceRow = limitedRawTable[rowIndex] || [];
 
     for (let colIndex = 0; colIndex < targetCols; colIndex++) {
-      let cellValue = sourceRow[colIndex];
+      // Take only the first targetCols from each row (strict limit)
+      let cellValue =
+        colIndex < sourceRow.length ? sourceRow[colIndex] : undefined;
 
       // Override with anchor values for first and last rows if provided
       if (rowIndex === 0 && firstRowAnchor && firstRowAnchor[colIndex]) {
