@@ -179,49 +179,81 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let extractedText = "";
     let useRealAPI = false;
 
+    // Debug environment variables
+    console.log("Environment check:");
+    console.log(
+      "- GOOGLE_CLOUD_CREDENTIALS_BASE64 exists:",
+      !!process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64,
+    );
+    console.log("- NODE_ENV:", process.env.NODE_ENV);
+    console.log("- VERCEL:", process.env.VERCEL);
+
     // Try to use Google Cloud Vision API if credentials are available
     try {
-      let visionClient;
+      if (!process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64) {
+        throw new Error(
+          "GOOGLE_CLOUD_CREDENTIALS_BASE64 environment variable not found",
+        );
+      }
 
-      // Check for base64 encoded credentials in environment variable
-      if (process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64) {
-        const credentialsJson = Buffer.from(
+      console.log("🔑 Found base64 credentials, decoding...");
+
+      let credentialsJson;
+      try {
+        credentialsJson = Buffer.from(
           process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64,
           "base64",
         ).toString("utf-8");
-
-        const credentials = JSON.parse(credentialsJson);
-        visionClient = new ImageAnnotatorClient({
-          credentials: credentials,
-        });
-
-        console.log("Using Google Cloud Vision API with base64 credentials");
-      } else {
-        // Fallback to default credentials or file-based credentials
-        visionClient = new ImageAnnotatorClient();
-        console.log("Using Google Cloud Vision API with default credentials");
+      } catch (decodeError) {
+        throw new Error(
+          "Failed to decode base64 credentials: " + decodeError.message,
+        );
       }
 
-      const fileBuffer = fs.readFileSync(file.filepath);
+      let credentials;
+      try {
+        credentials = JSON.parse(credentialsJson);
+        console.log("📋 Credentials parsed, project:", credentials.project_id);
+      } catch (parseError) {
+        throw new Error(
+          "Failed to parse credentials JSON: " + parseError.message,
+        );
+      }
 
+      console.log("🚀 Initializing Google Vision client...");
+      const visionClient = new ImageAnnotatorClient({
+        credentials: credentials,
+      });
+
+      console.log("📁 Reading file buffer...");
+      const fileBuffer = fs.readFileSync(file.filepath);
+      console.log("📄 File buffer size:", fileBuffer.length);
+
+      console.log("🔍 Calling Google Vision API...");
       const [result] = await visionClient.documentTextDetection({
         image: { content: fileBuffer },
       });
 
+      console.log("📊 Vision API response received");
       const detections = result.textAnnotations;
-      if (detections && detections.length > 0) {
-        extractedText = detections[0].description || "";
+
+      if (detections && detections.length > 0 && detections[0].description) {
+        extractedText = detections[0].description;
         useRealAPI = true;
         console.log(
-          "✅ Successfully extracted text from image with Google Vision API:",
-          extractedText.substring(0, 100) + "...",
+          "✅ SUCCESS: Extracted",
+          extractedText.length,
+          "characters",
         );
+        console.log("📝 First 200 chars:", extractedText.substring(0, 200));
       } else {
-        console.log("No text detected in the image");
+        console.log("⚠️ No text detected in the image");
+        throw new Error("No text detected in image");
       }
     } catch (visionError) {
-      console.error("Google Cloud Vision error:", visionError);
-      console.log("Falling back to mock data");
+      console.error("❌ Google Cloud Vision error:", visionError.message);
+      console.error("📜 Full error:", visionError);
+      console.log("🔄 Falling back to mock data");
     }
 
     // Fallback to enhanced mock data if no text extracted
