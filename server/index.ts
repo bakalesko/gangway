@@ -458,29 +458,51 @@ function parseTextToTable(
               interpolated: false,
             };
           } else {
-            // Try to extract valid numbers from OCR text
+            // Smart OCR number extraction
             let extractedNumber: string | null = null;
 
-            // First try to find a simple decimal number
-            const decimalMatch = cellValue.match(/^-?\d+\.\d+$/);
-            if (decimalMatch) {
-              extractedNumber = decimalMatch[0];
-            } else {
-              // Try to find integer
-              const intMatch = cellValue.match(/^-?\d+$/);
-              if (intMatch) {
-                extractedNumber = intMatch[0];
+            // Clean up common OCR errors
+            let cleanedValue = cellValue
+              .replace(/[oO]/g, "0") // Replace O with 0
+              .replace(/[lI]/g, "1") // Replace l,I with 1
+              .replace(/\s+/g, "") // Remove spaces
+              .trim();
+
+            // Handle dash-separated values (common OCR error)
+            if (cleanedValue.includes("-") && !cleanedValue.startsWith("-")) {
+              const parts = cleanedValue.split("-");
+              // Take the first part if it looks like a reasonable number
+              for (const part of parts) {
+                if (part && part.length <= 6 && isValidNumber(part)) {
+                  extractedNumber = part;
+                  break;
+                }
+              }
+            }
+            // Handle period-separated large numbers (might be OCR combining numbers)
+            else if (cleanedValue.includes(".") && cleanedValue.length > 6) {
+              const beforeDot = cleanedValue.split(".")[0];
+              const afterDot = cleanedValue.split(".")[1];
+
+              // If the part after dot is very long, it might be OCR error
+              if (afterDot && afterDot.length > 3) {
+                extractedNumber = beforeDot; // Take the integer part
               } else {
-                // Try to find first valid number in mixed content
-                const mixedMatches = cellValue.match(/-?\d+\.?\d*/g);
-                if (mixedMatches && mixedMatches.length > 0) {
-                  // Find the most reasonable number (avoid very long numbers that might be OCR errors)
-                  for (const match of mixedMatches) {
-                    if (match.length <= 8 && isValidNumber(match)) {
-                      // Reasonable length limit
-                      extractedNumber = match;
-                      break;
-                    }
+                extractedNumber = cleanedValue; // Keep the decimal
+              }
+            }
+            // Simple cases
+            else if (isValidNumber(cleanedValue)) {
+              extractedNumber = cleanedValue;
+            }
+            // Last resort: extract first reasonable number
+            else {
+              const matches = cleanedValue.match(/\d+\.?\d*/g);
+              if (matches) {
+                for (const match of matches) {
+                  if (match.length <= 6 && isValidNumber(match)) {
+                    extractedNumber = match;
+                    break;
                   }
                 }
               }
