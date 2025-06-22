@@ -561,10 +561,51 @@ const Index = () => {
         {tableData && (
           <Card className="mt-8 shadow-lg">
             <CardHeader>
-              <CardTitle>Extracted Table Data</CardTitle>
+              <CardTitle className="flex items-center justify-between">
+                <span>Extracted Table Data</span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      // Select entire table programmatically
+                      const allCells = [];
+                      // Add headers
+                      for (let col = 0; col < tableData.headers.length; col++) {
+                        allCells.push(`-1-${col}`);
+                      }
+                      // Add all data cells
+                      for (let row = 0; row < tableData.rows.length; row++) {
+                        for (
+                          let col = 0;
+                          col < tableData.rows[row].length;
+                          col++
+                        ) {
+                          allCells.push(`${row}-${col}`);
+                        }
+                      }
+                      // Trigger selection via window event
+                      window.dispatchEvent(
+                        new CustomEvent("selectAllCells", { detail: allCells }),
+                      );
+                    }}
+                  >
+                    <MousePointer className="h-4 w-4 mr-1" />
+                    Select All
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={copyTableToClipboard}
+                  >
+                    <Copy className="h-4 w-4 mr-1" />
+                    Copy Table
+                  </Button>
+                </div>
+              </CardTitle>
               <CardDescription>
                 Edit any cell values as needed. Cells with light blue background
-                were interpolated by OCR.
+                were interpolated by OCR. Drag borders to resize columns/rows.
               </CardDescription>
             </CardHeader>
             <CardContent>
