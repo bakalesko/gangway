@@ -7,15 +7,6 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    proxy:
-      mode === "development"
-        ? {
-            "/api": {
-              target: "http://localhost:3001",
-              changeOrigin: true,
-            },
-          }
-        : undefined,
   },
   plugins: [react()],
   resolve: {
@@ -26,5 +17,8 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: "dist",
     sourcemap: false,
+  },
+  define: {
+    "process.env": process.env,
   },
 }));
