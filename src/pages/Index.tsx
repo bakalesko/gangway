@@ -25,7 +25,10 @@ import {
   AlertCircle,
   Scan,
   Loader2,
+  Settings,
 } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 // Type definitions for table data
