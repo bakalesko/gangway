@@ -377,6 +377,18 @@ function parseTextToTable(
   console.log("🔧 Interpolating missing values...");
   let interpolatedCount = 0;
 
+  // First, detect entirely missing rows
+  const missingRows = new Set<number>();
+  for (let rowIndex = 1; rowIndex < normalizedTable.length - 1; rowIndex++) {
+    // Skip header and last row
+    const row = normalizedTable[rowIndex];
+    const hasAnyValue = row.some((cell) => cell && !cell.interpolated);
+    if (!hasAnyValue) {
+      missingRows.add(rowIndex);
+      console.log(`🔍 Detected missing row: ${rowIndex}`);
+    }
+  }
+
   for (let rowIndex = 0; rowIndex < normalizedTable.length; rowIndex++) {
     for (let colIndex = 0; colIndex < targetCols; colIndex++) {
       if (!normalizedTable[rowIndex][colIndex]) {
@@ -387,9 +399,31 @@ function parseTextToTable(
           firstRowAnchor,
           lastRowAnchor,
         );
+
+        // Round to 1 decimal place if anchor rows have decimals
+        let finalValue = interpolatedValue;
+        if (
+          firstRowAnchor &&
+          lastRowAnchor &&
+          firstRowAnchor[colIndex] &&
+          lastRowAnchor[colIndex] &&
+          isValidNumber(firstRowAnchor[colIndex]) &&
+          isValidNumber(lastRowAnchor[colIndex])
+        ) {
+          const firstHasDecimal = firstRowAnchor[colIndex].includes(".");
+          const lastHasDecimal = lastRowAnchor[colIndex].includes(".");
+          if (firstHasDecimal || lastHasDecimal) {
+            const numValue = parseFloat(finalValue);
+            if (!isNaN(numValue)) {
+              finalValue = numValue.toFixed(1);
+            }
+          }
+        }
+
         normalizedTable[rowIndex][colIndex] = {
-          value: interpolatedValue,
+          value: finalValue,
           interpolated: true,
+          missingRow: missingRows.has(rowIndex), // Mark if entire row is missing
         };
         interpolatedCount++;
       }
