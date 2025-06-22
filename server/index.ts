@@ -225,32 +225,59 @@ app.post("/api/ocr", upload.single("file"), async (req, res) => {
     );
 
     let extractedText = "";
+    let useRealAPI = false;
+    let visionError = "";
 
     if (visionClient) {
       try {
+        console.log("🔍 Calling Google Vision API...");
         // Use Google Cloud Vision API
         const [result] = await visionClient.documentTextDetection({
           image: { content: req.file.buffer },
         });
 
+        console.log("📊 Vision API response received");
         const detections = result.textAnnotations;
-        if (detections && detections.length > 0) {
-          extractedText = detections[0].description || "";
+        if (detections && detections.length > 0 && detections[0].description) {
+          extractedText = detections[0].description;
+          useRealAPI = true;
+          console.log(
+            "✅ SUCCESS: Extracted",
+            extractedText.length,
+            "characters",
+          );
+          console.log("📝 First 200 chars:", extractedText.substring(0, 200));
+        } else {
+          console.log("⚠️ No text detected in the image");
+          visionError = "No text detected in image";
         }
-      } catch (visionError) {
-        console.error("Google Cloud Vision API error:", visionError);
-        throw new Error("Failed to process image with Google Cloud Vision API");
+      } catch (error) {
+        visionError =
+          error instanceof Error ? error.message : "Unknown Vision API error";
+        console.error("❌ Google Cloud Vision error:", visionError);
       }
+    } else {
+      visionError = "Google Cloud Vision client not initialized";
+      console.error("❌ Vision client not available");
     }
 
-    // Fallback to mock data if no text extracted or no Vision client
-    if (!extractedText.trim()) {
-      console.log("Using mock data for demonstration");
-      extractedText = `Sample ID\tpH Level\tTemperature\tConcentration\tNotes
-S001\t7.2\t25.4\t0.5\tNormal
-S002\t\t24.1\t0.7\tElevated
-S003\t7.0\t\t0.4\tRange
-S004\t6.8\t26.2\t\tHigh`;
+    // If Google Vision API failed, return error instead of mock data
+    if (!useRealAPI) {
+      const debugInfo = {
+        environment: process.env.NODE_ENV || "unknown",
+        credentialsFound: !!process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64,
+        credentialsLength:
+          process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64?.length || 0,
+        useRealAPI: false,
+        extractedTextLength: 0,
+        error: visionError,
+      };
+
+      return res.status(422).json({
+        error: "Google Vision API is not available",
+        details: visionError,
+        debug: debugInfo,
+      });
     }
 
     // Parse the extracted text into a structured table
