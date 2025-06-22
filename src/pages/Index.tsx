@@ -448,6 +448,57 @@ const Index = () => {
                 </div>
               </div>
 
+              {/* Table Configuration */}
+              <div className="mt-6 p-4 bg-muted/30 rounded-lg border">
+                <div className="flex items-center gap-2 mb-3">
+                  <Settings className="h-4 w-4" />
+                  <Label className="text-sm font-medium">
+                    Конфигуриране на таблицата
+                  </Label>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label
+                      htmlFor="columns"
+                      className="text-xs text-muted-foreground"
+                    >
+                      Колони
+                    </Label>
+                    <Input
+                      id="columns"
+                      type="number"
+                      min="1"
+                      max="50"
+                      value={expectedColumns}
+                      onChange={(e) =>
+                        setExpectedColumns(Number(e.target.value))
+                      }
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label
+                      htmlFor="rows"
+                      className="text-xs text-muted-foreground"
+                    >
+                      Редове
+                    </Label>
+                    <Input
+                      id="rows"
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={expectedRows}
+                      onChange={(e) => setExpectedRows(Number(e.target.value))}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Задайте очакваните размери на таблицата за по-точно разчитане
+                </p>
+              </div>
+
               <Button
                 onClick={handleScanTable}
                 disabled={!selectedFile || isScanning}
