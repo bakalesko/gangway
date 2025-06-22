@@ -509,6 +509,48 @@ const Index = () => {
                 </p>
               </div>
 
+              {/* Anchor Rows Configuration */}
+              <div className="mt-4 p-4 bg-blue-50/50 rounded-lg border border-blue-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <Settings className="h-4 w-4 text-blue-600" />
+                  <Label className="text-sm font-medium text-blue-900">
+                    Котвени редове за интерполация
+                  </Label>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="firstRow" className="text-xs text-blue-700">
+                      Първи ред (разделени с комa или интервал)
+                    </Label>
+                    <Input
+                      id="firstRow"
+                      type="text"
+                      placeholder="напр. 1, 5.2, 10.5, 15.8, ..."
+                      value={firstRowValues}
+                      onChange={(e) => setFirstRowValues(e.target.value)}
+                      className="mt-1 border-blue-200 focus:border-blue-400"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="lastRow" className="text-xs text-blue-700">
+                      Последен ред (разделени с комa или интервал)
+                    </Label>
+                    <Input
+                      id="lastRow"
+                      type="text"
+                      placeholder="напр. 24, 127.4, 245.2, 368.9, ..."
+                      value={lastRowValues}
+                      onChange={(e) => setLastRowValues(e.target.value)}
+                      className="mt-1 border-blue-200 focus:border-blue-400"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-blue-600 mt-2">
+                  💡 Когато OCR пропусне цели редове, тези стойности ще се
+                  използват като котви за интерполация
+                </p>
+              </div>
+
               <Button
                 onClick={handleScanTable}
                 disabled={!selectedFile || isScanning}
