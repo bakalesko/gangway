@@ -36,23 +36,45 @@ const upload = multer({
 let visionClient: ImageAnnotatorClient;
 
 try {
-  // Try to load credentials from environment variable or file
-  const credentialsPath =
-    process.env.GOOGLE_APPLICATION_CREDENTIALS ||
-    path.join(process.cwd(), "credentials.json");
+  // Try to load credentials from base64 environment variable first
+  if (process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64) {
+    console.log("🔑 Found base64 credentials, decoding...");
 
-  if (fs.existsSync(credentialsPath)) {
+    const credentialsJson = Buffer.from(
+      process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64,
+      "base64",
+    ).toString("utf-8");
+
+    const credentials = JSON.parse(credentialsJson);
+    console.log("📋 Credentials parsed, project:", credentials.project_id);
+
     visionClient = new ImageAnnotatorClient({
-      keyFilename: credentialsPath,
+      credentials: credentials,
     });
-    console.log("Google Cloud Vision client initialized successfully");
-  } else {
-    console.warn(
-      "Google Cloud Vision credentials not found. Using mock data for development.",
+    console.log(
+      "✅ Google Cloud Vision client initialized successfully with base64 credentials",
     );
+  } else {
+    // Fallback to file-based credentials
+    const credentialsPath =
+      process.env.GOOGLE_APPLICATION_CREDENTIALS ||
+      path.join(process.cwd(), "credentials.json");
+
+    if (fs.existsSync(credentialsPath)) {
+      visionClient = new ImageAnnotatorClient({
+        keyFilename: credentialsPath,
+      });
+      console.log(
+        "✅ Google Cloud Vision client initialized successfully with file credentials",
+      );
+    } else {
+      console.warn(
+        "⚠️ Google Cloud Vision credentials not found. API will return errors for OCR requests.",
+      );
+    }
   }
 } catch (error) {
-  console.error("Error initializing Google Cloud Vision client:", error);
+  console.error("❌ Error initializing Google Cloud Vision client:", error);
 }
 
 // Types
