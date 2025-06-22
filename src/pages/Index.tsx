@@ -59,11 +59,9 @@ const Index = () => {
   const [firstRowValues, setFirstRowValues] = useState("");
   const [lastRowValues, setLastRowValues] = useState("");
 
-  // Table sizing
-  const [columnWidths, setColumnWidths] = useState<{ [key: number]: number }>(
-    {},
-  );
-  const [rowHeights, setRowHeights] = useState<{ [key: number]: number }>({});
+  // Global table sizing
+  const [globalColumnWidth, setGlobalColumnWidth] = useState(120);
+  const [globalRowHeight, setGlobalRowHeight] = useState(40);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
