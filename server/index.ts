@@ -81,6 +81,7 @@ try {
 interface TableCell {
   value: string;
   interpolated: boolean;
+  missingRow?: boolean; // Mark entire missing rows
 }
 
 // Helper function to check if a value is a valid number
