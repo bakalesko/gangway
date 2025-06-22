@@ -121,12 +121,19 @@ const Index = () => {
       if (response.ok) {
         const data = await response.json();
         setTableData(data);
+
+        // Create detailed debug message
+        let message = "";
+        if (data.source === "Google Vision API") {
+          message = "✅ Image scanned successfully with Google Vision API!";
+        } else {
+          const debug = data.debug || {};
+          message = `📊 Demo: Using mock data. Debug: Credentials=${debug.credentialsFound ? "Found" : "Missing"} (${debug.credentialsLength} chars), Vercel=${debug.vercel}, API=${debug.useRealAPI}, TextLen=${debug.extractedTextLength}`;
+        }
+
         setAlertMessage({
           type: "success",
-          message:
-            data.source === "Google Vision API"
-              ? "✅ Image scanned successfully with Google Vision API!"
-              : "📊 Demo: Enhanced mock data loaded (Google Vision API credentials not configured)",
+          message: message,
         });
       } else {
         throw new Error("API not available");
