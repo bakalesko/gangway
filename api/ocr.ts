@@ -392,6 +392,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       file.size,
       "Expected dimensions:",
       `${expectedColumns}x${expectedRows}`,
+      "Anchor rows:",
+      firstRowValues ? "First✓" : "First✗",
+      lastRowValues ? "Last✓" : "Last✗",
     );
 
     let extractedText = "";
