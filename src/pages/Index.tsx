@@ -255,11 +255,31 @@ const Index = () => {
         const errorData = await response
           .json()
           .catch(() => ({ error: "Unknown error" }));
+        const errorMsg = `Excel export failed (${response.status}): ${errorData.error || response.statusText}`;
+        addErrorLog(errorMsg);
         throw new Error(errorData.error || "Failed to export data");
+      }
+
+      // Check if response is actually Excel file
+      const contentType = response.headers.get("Content-Type");
+      if (
+        !contentType?.includes("spreadsheetml") &&
+        !contentType?.includes("excel")
+      ) {
+        const errorMsg = `Invalid response type: ${contentType}. Expected Excel file.`;
+        addErrorLog(errorMsg);
+        throw new Error("Server returned invalid file format");
       }
 
       // Create download link
       const blob = await response.blob();
+
+      if (blob.size === 0) {
+        const errorMsg = "Excel export returned empty file";
+        addErrorLog(errorMsg);
+        throw new Error("Generated file is empty");
+      }
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -283,16 +303,17 @@ const Index = () => {
 
       setAlertMessage({
         type: "success",
-        message: "Excel file downloaded successfully!",
+        message: `Excel file "${filename}" downloaded successfully!`,
       });
     } catch (error) {
       console.error("Export Error:", error);
+      const errorMsg =
+        error instanceof Error ? error.message : "Unknown download error";
+      addErrorLog(`Excel download failed: ${errorMsg}`);
+
       setAlertMessage({
         type: "error",
-        message:
-          error instanceof Error
-            ? error.message
-            : "Failed to download file. Please try again.",
+        message: "❌ Excel download failed. Check error log below for details.",
       });
     } finally {
       setIsDownloading(false);
