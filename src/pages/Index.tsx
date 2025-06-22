@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
 // Type definitions for table data
@@ -52,7 +53,6 @@ const Index = () => {
     type: "success" | "error";
     message: string;
   } | null>(null);
-  const [errorLogs, setErrorLogs] = useState<string[]>([]);
 
   // Table configuration
   const [expectedColumns, setExpectedColumns] = useState(13);
@@ -63,41 +63,6 @@ const Index = () => {
   const [lastRowValues, setLastRowValues] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Check system status
-  const checkSystemStatus = async () => {
-    addErrorLog("🔍 Checking system status...");
-
-    try {
-      // Test basic connectivity first
-      const response = await fetch("/api/health");
-
-      if (response.ok) {
-        addErrorLog("✅ API server is reachable");
-
-        // In development mode, API endpoints might not work properly
-        // but the credentials should be configured in the build process
-        addErrorLog("💡 Development mode detected");
-        addErrorLog("📋 API endpoints are designed for production (Vercel)");
-        addErrorLog(
-          "🧪 Test with actual image upload to verify Google Vision API",
-        );
-      } else {
-        addErrorLog(
-          `❌ API server returned ${response.status}: ${response.statusText}`,
-        );
-        addErrorLog("⚠️ This is expected in development mode");
-        addErrorLog("🚀 Deploy to Vercel to test full functionality");
-      }
-    } catch (error) {
-      addErrorLog("⚠️ API endpoints not available in development mode");
-      addErrorLog(
-        "💡 This is normal - the app is configured for Vercel deployment",
-      );
-      addErrorLog("🧪 Try uploading an image to test Google Vision API");
-      addErrorLog("🚀 For full testing, deploy to Vercel");
-    }
-  };
 
   // File selection handler
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -142,12 +107,6 @@ const Index = () => {
     }
   };
 
-  // Add error to log
-  const addErrorLog = (error: string) => {
-    const timestamp = new Date().toLocaleTimeString();
-    setErrorLogs((prev) => [`[${timestamp}] ${error}`, ...prev.slice(0, 9)]);
-  };
-
   // OCR scan handler
   const handleScanTable = async () => {
     if (!selectedFile) {
@@ -189,47 +148,26 @@ const Index = () => {
             message: "✅ Image scanned successfully with Google Vision API!",
           });
         } else {
-          // API returned mock data, log the errors
-          const debug = data.debug || {};
-          const errorDetails = [];
-
-          if (!debug.credentialsFound) {
-            errorDetails.push("Google Cloud credentials not configured");
-          }
-          if (!debug.useRealAPI) {
-            errorDetails.push("Failed to connect to Google Vision API");
-          }
-
-          const mainError = `Google Vision API connection failed: ${errorDetails.join(", ")}`;
-          addErrorLog(mainError);
-
           setAlertMessage({
             type: "error",
             message:
-              "❌ Cannot process image - Google Vision API not available. Check error log below.",
+              "❌ Cannot process image - Google Vision API not available.",
           });
         }
       } else {
         const errorData = await response
           .json()
           .catch(() => ({ error: "Unknown API error" }));
-        const errorMsg = `API request failed: ${errorData.error || response.statusText}`;
-        addErrorLog(errorMsg);
 
         setAlertMessage({
           type: "error",
-          message:
-            "��� Failed to process image. Check error log below for details.",
+          message: "❌ Failed to process image. Please try again.",
         });
       }
     } catch (error) {
-      const errorMsg = `Network error: ${error instanceof Error ? error.message : "Unknown error"}`;
-      addErrorLog(errorMsg);
-
       setAlertMessage({
         type: "error",
-        message:
-          "❌ Cannot connect to processing server. Check error log below.",
+        message: "❌ Cannot connect to processing server.",
       });
     } finally {
       setIsScanning(false);
@@ -306,31 +244,13 @@ const Index = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response
-          .json()
-          .catch(() => ({ error: "Unknown error" }));
-        const errorMsg = `Excel export failed (${response.status}): ${errorData.error || response.statusText}`;
-        addErrorLog(errorMsg);
-        throw new Error(errorData.error || "Failed to export data");
-      }
-
-      // Check if response is actually Excel file
-      const contentType = response.headers.get("Content-Type");
-      if (
-        !contentType?.includes("spreadsheetml") &&
-        !contentType?.includes("excel")
-      ) {
-        const errorMsg = `Invalid response type: ${contentType}. Expected Excel file.`;
-        addErrorLog(errorMsg);
-        throw new Error("Server returned invalid file format");
+        throw new Error("Failed to export data");
       }
 
       // Create download link
       const blob = await response.blob();
 
       if (blob.size === 0) {
-        const errorMsg = "Excel export returned empty file";
-        addErrorLog(errorMsg);
         throw new Error("Generated file is empty");
       }
 
@@ -360,14 +280,9 @@ const Index = () => {
         message: `Excel file "${filename}" downloaded successfully!`,
       });
     } catch (error) {
-      console.error("Export Error:", error);
-      const errorMsg =
-        error instanceof Error ? error.message : "Unknown download error";
-      addErrorLog(`Excel download failed: ${errorMsg}`);
-
       setAlertMessage({
         type: "error",
-        message: "❌ Excel download failed. Check error log below for details.",
+        message: "❌ Excel download failed. Please try again.",
       });
     } finally {
       setIsDownloading(false);
@@ -375,7 +290,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header Section */}
         <div className="text-center mb-8">
@@ -386,6 +301,9 @@ const Index = () => {
             <h1 className="text-4xl font-bold text-foreground">
               Lab Table Scanner
             </h1>
+            <div className="ml-4">
+              <ThemeToggle />
+            </div>
           </div>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Transform handwritten lab tables into digital data. Upload your
@@ -402,7 +320,7 @@ const Index = () => {
               }
               className={cn(
                 alertMessage.type === "success" &&
-                  "border-green-200 bg-green-50 text-green-800",
+                  "border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-400",
               )}
             >
               {alertMessage.type === "success" ? (
@@ -463,7 +381,7 @@ const Index = () => {
                 <div className="flex items-center gap-2 mb-3">
                   <Settings className="h-4 w-4" />
                   <Label className="text-sm font-medium">
-                    Конфигуриране на таблицата
+                    Table Configuration
                   </Label>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -472,7 +390,7 @@ const Index = () => {
                       htmlFor="columns"
                       className="text-xs text-muted-foreground"
                     >
-                      Колони
+                      Columns
                     </Label>
                     <Input
                       id="columns"
@@ -491,7 +409,7 @@ const Index = () => {
                       htmlFor="rows"
                       className="text-xs text-muted-foreground"
                     >
-                      Редове
+                      Rows
                     </Label>
                     <Input
                       id="rows"
@@ -505,49 +423,55 @@ const Index = () => {
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  Задайте очакваните размери на таблицата за по-точно разчитане
+                  Set expected table dimensions for more accurate reading
                 </p>
               </div>
 
               {/* Anchor Rows Configuration */}
-              <div className="mt-4 p-4 bg-blue-50/50 rounded-lg border border-blue-200">
+              <div className="mt-4 p-4 bg-blue-50/50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
                 <div className="flex items-center gap-2 mb-3">
-                  <Settings className="h-4 w-4 text-blue-600" />
-                  <Label className="text-sm font-medium text-blue-900">
-                    Котвени редове за интерполация
+                  <Settings className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <Label className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                    Anchor Rows for Interpolation
                   </Label>
                 </div>
                 <div className="space-y-3">
                   <div>
-                    <Label htmlFor="firstRow" className="text-xs text-blue-700">
-                      Първи ред (разделени с комa или интервал)
+                    <Label
+                      htmlFor="firstRow"
+                      className="text-xs text-blue-700 dark:text-blue-300"
+                    >
+                      First Row (comma or space separated)
                     </Label>
                     <Input
                       id="firstRow"
                       type="text"
-                      placeholder="напр. 1, 5.2, 10.5, 15.8, ..."
+                      placeholder="e.g. 1, 5.2, 10.5, 15.8, ..."
                       value={firstRowValues}
                       onChange={(e) => setFirstRowValues(e.target.value)}
-                      className="mt-1 border-blue-200 focus:border-blue-400"
+                      className="mt-1 border-blue-200 focus:border-blue-400 dark:border-blue-700"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="lastRow" className="text-xs text-blue-700">
-                      Последен ред (разделени с комa или интервал)
+                    <Label
+                      htmlFor="lastRow"
+                      className="text-xs text-blue-700 dark:text-blue-300"
+                    >
+                      Last Row (comma or space separated)
                     </Label>
                     <Input
                       id="lastRow"
                       type="text"
-                      placeholder="напр. 24, 127.4, 245.2, 368.9, ..."
+                      placeholder="e.g. 24, 127.4, 245.2, 368.9, ..."
                       value={lastRowValues}
                       onChange={(e) => setLastRowValues(e.target.value)}
-                      className="mt-1 border-blue-200 focus:border-blue-400"
+                      className="mt-1 border-blue-200 focus:border-blue-400 dark:border-blue-700"
                     />
                   </div>
                 </div>
-                <p className="text-xs text-blue-600 mt-2">
-                  💡 Когато OCR пропусне цели редове, тези стойности ще се
-                  използват като котви за интерполация
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                  💡 When OCR misses entire rows, these values will be used as
+                  anchors for interpolation
                 </p>
               </div>
 
@@ -701,7 +625,7 @@ const Index = () => {
 
               <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-blue-50 border border-blue-200 rounded"></div>
+                  <div className="w-4 h-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded"></div>
                   <span>Interpolated values</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -712,83 +636,6 @@ const Index = () => {
             </CardContent>
           </Card>
         )}
-
-        {/* Error Log Section - Always visible now for debugging */}
-        <Card className="mt-8 shadow-lg border-orange-200">
-          <CardHeader className="bg-orange-50">
-            <CardTitle className="flex items-center gap-2 text-orange-800">
-              <AlertCircle className="h-5 w-5" />
-              System Status & Error Log
-              <div className="ml-auto flex gap-2">
-                <Button onClick={checkSystemStatus} variant="outline" size="sm">
-                  Check System Status
-                </Button>
-                {errorLogs.length > 0 && (
-                  <Button
-                    onClick={() => setErrorLogs([])}
-                    variant="outline"
-                    size="sm"
-                  >
-                    Clear Log
-                  </Button>
-                )}
-              </div>
-            </CardTitle>
-            <CardDescription className="text-orange-600">
-              {errorLogs.length > 0
-                ? "Connection and processing errors are logged here for debugging"
-                : "No errors logged yet. Click 'Check System Status' to test the connection."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-4">
-            {errorLogs.length > 0 ? (
-              <div className="space-y-2 max-h-40 overflow-y-auto mb-4">
-                {errorLogs.map((log, index) => (
-                  <div
-                    key={index}
-                    className={cn(
-                      "text-sm font-mono p-2 border rounded",
-                      log.includes("✅")
-                        ? "bg-green-50 border-green-200 text-green-800"
-                        : "bg-red-50 border-red-200 text-red-800",
-                    )}
-                  >
-                    {log}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-sm text-muted-foreground mb-4 p-3 bg-gray-50 border rounded">
-                No system errors recorded. Use the "Check System Status" button
-                to test connectivity.
-              </div>
-            )}
-
-            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
-              <p className="text-sm text-yellow-800">
-                <strong>Troubleshooting steps:</strong>
-              </p>
-              <ul className="text-sm text-yellow-700 mt-1 space-y-1">
-                <li>
-                  • <strong>For Google Vision API:</strong> Check if credentials
-                  are configured in environment variables
-                </li>
-                <li>
-                  • <strong>For Excel export:</strong> Ensure the API server is
-                  running and accessible
-                </li>
-                <li>
-                  • <strong>For image processing:</strong> Try different image
-                  formats (JPG, PNG, PDF)
-                </li>
-                <li>
-                  • <strong>Network issues:</strong> Check browser developer
-                  console for additional errors
-                </li>
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
