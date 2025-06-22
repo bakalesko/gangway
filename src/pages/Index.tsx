@@ -66,6 +66,20 @@ const Index = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Helper functions for table sizing
+  const getColumnWidth = (index: number) => columnWidths[index] || 120;
+  const getRowHeight = (index: number) => rowHeights[index] || 40;
+
+  const adjustColumnWidth = (index: number, delta: number) => {
+    const newWidth = Math.max(80, getColumnWidth(index) + delta);
+    setColumnWidths((prev) => ({ ...prev, [index]: newWidth }));
+  };
+
+  const adjustRowHeight = (index: number, delta: number) => {
+    const newHeight = Math.max(30, getRowHeight(index) + delta);
+    setRowHeights((prev) => ({ ...prev, [index]: newHeight }));
+  };
+
   // File selection handler
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
