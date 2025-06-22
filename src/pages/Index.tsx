@@ -650,7 +650,10 @@ const Index = () => {
                             className={cn(
                               "border-r border-b border-border p-1",
                               cell.interpolated &&
+                                !cell.missingRow &&
                                 "bg-blue-50 dark:bg-blue-950/20",
+                              cell.missingRow &&
+                                "bg-blue-100 dark:bg-blue-900/30",
                             )}
                             style={{
                               width: globalColumnWidth,
@@ -672,7 +675,10 @@ const Index = () => {
                               className={cn(
                                 "w-full h-full px-2 py-1 bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-primary rounded text-sm",
                                 cell.interpolated &&
+                                  !cell.missingRow &&
                                   "bg-blue-50/50 dark:bg-blue-950/10",
+                                cell.missingRow &&
+                                  "bg-blue-100/50 dark:bg-blue-900/20",
                               )}
                               style={{ height: globalRowHeight - 2 }}
                             />
