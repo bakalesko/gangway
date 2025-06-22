@@ -660,7 +660,10 @@ const Index = () => {
                   </thead>
                   <tbody>
                     {tableData.rows.map((row, rowIndex) => (
-                      <tr key={rowIndex}>
+                      <tr
+                        key={rowIndex}
+                        style={{ height: getRowHeight(rowIndex) }}
+                      >
                         {row.map((cell, cellIndex) => (
                           <td
                             key={cellIndex}
@@ -669,6 +672,12 @@ const Index = () => {
                               cell.interpolated &&
                                 "bg-blue-50 dark:bg-blue-950/20",
                             )}
+                            style={{
+                              width: getColumnWidth(cellIndex),
+                              height: getRowHeight(rowIndex),
+                              minWidth: getColumnWidth(cellIndex),
+                              maxWidth: getColumnWidth(cellIndex),
+                            }}
                           >
                             <input
                               type="text"
@@ -681,10 +690,11 @@ const Index = () => {
                                 )
                               }
                               className={cn(
-                                "w-full px-2 py-1 bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-primary rounded text-sm",
+                                "w-full h-full px-2 py-1 bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-primary rounded text-sm",
                                 cell.interpolated &&
                                   "bg-blue-50/50 dark:bg-blue-950/10",
                               )}
+                              style={{ height: getRowHeight(rowIndex) - 2 }}
                             />
                           </td>
                         ))}
