@@ -276,6 +276,8 @@ function parseTextToTable(
           normalizedTable,
           rowIndex,
           colIndex,
+          firstRowAnchor,
+          lastRowAnchor,
         );
         normalizedTable[rowIndex][colIndex] = {
           value: interpolatedValue,
