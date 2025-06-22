@@ -177,6 +177,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log("Processing file:", file.originalFilename, "Size:", file.size);
 
     let extractedText = "";
+    let useRealAPI = false;
 
     // Try to use Google Cloud Vision API if credentials are available
     try {
@@ -196,7 +197,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         console.log("Using Google Cloud Vision API with base64 credentials");
       } else {
-        // Fallback to default credentials
+        // Fallback to default credentials or file-based credentials
         visionClient = new ImageAnnotatorClient();
         console.log("Using Google Cloud Vision API with default credentials");
       }
@@ -210,8 +211,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const detections = result.textAnnotations;
       if (detections && detections.length > 0) {
         extractedText = detections[0].description || "";
+        useRealAPI = true;
         console.log(
-          "Successfully extracted text from image:",
+          "✅ Successfully extracted text from image with Google Vision API:",
           extractedText.substring(0, 100) + "...",
         );
       } else {
@@ -222,14 +224,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.log("Falling back to mock data");
     }
 
-    // Fallback to mock data if no text extracted
+    // Fallback to enhanced mock data if no text extracted
     if (!extractedText.trim()) {
-      console.log("Using mock data for demonstration");
-      extractedText = `Sample ID\tpH Level\tTemperature\tConcentration\tNotes
-S001\t7.2\t25.4\t0.5\tNormal
-S002\t\t24.1\t0.7\tElevated
-S003\t7.0\t\t0.4\tRange
-S004\t6.8\t26.2\t\tHigh`;
+      console.log("Using enhanced mock data for demonstration");
+      extractedText = `Sample ID\tpH Level\tTemperature (°C)\tConcentration\tNotes
+S001\t7.2\t25.4\t0.5 mg/L\tNormal range
+S002\t\t24.1\t0.7 mg/L\tSlightly elevated
+S003\t7.0\t\t0.4 mg/L\tWithin range
+S004\t6.8\t26.2\t\tHigh temperature
+S005\t7.1\t25.0\t0.6 mg/L\tOptimal conditions`;
     }
 
     // Parse the extracted text into a structured table
@@ -241,6 +244,8 @@ S004\t6.8\t26.2\t\tHigh`;
       headers:
         tableData.length > 0 ? tableData[0].map((cell) => cell.value) : [],
       rows: tableData.slice(1),
+      source: useRealAPI ? "Google Vision API" : "Mock Data",
+      credentialsFound: !!process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64,
     });
   } catch (error) {
     console.error("OCR processing error:", error);
