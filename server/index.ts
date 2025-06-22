@@ -468,15 +468,36 @@ function parseTextToTable(
               .replace(/\s+/g, "") // Remove spaces
               .trim();
 
-            // Handle dash-separated values (common OCR error)
+            // Handle dash-separated values (common OCR error like "0.5-154" or "3500-59")
             if (cleanedValue.includes("-") && !cleanedValue.startsWith("-")) {
               const parts = cleanedValue.split("-");
-              // Take the first part if it looks like a reasonable number
+
+              // Strategy: Take the most reasonable number
+              let bestPart = null;
+              let bestScore = -1;
+
               for (const part of parts) {
-                if (part && part.length <= 6 && isValidNumber(part)) {
-                  extractedNumber = part;
-                  break;
+                if (part && isValidNumber(part)) {
+                  // Score based on reasonable range and length
+                  let score = 0;
+                  const num = parseFloat(part);
+
+                  // Prefer numbers in reasonable lab value ranges
+                  if (num >= 0 && num <= 1000) score += 10;
+                  if (num >= 0 && num <= 100) score += 5;
+                  if (part.length <= 4) score += 5; // Prefer shorter numbers
+                  if (part.includes(".") && part.split(".")[1].length <= 2)
+                    score += 3; // Reasonable decimals
+
+                  if (score > bestScore) {
+                    bestScore = score;
+                    bestPart = part;
+                  }
                 }
+              }
+
+              if (bestPart) {
+                extractedNumber = bestPart;
               }
             }
             // Handle period-separated large numbers (might be OCR combining numbers)
