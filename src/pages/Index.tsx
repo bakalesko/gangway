@@ -161,6 +161,8 @@ const Index = () => {
       // Try to use the API endpoint first
       const formData = new FormData();
       formData.append("file", selectedFile);
+      formData.append("expectedColumns", expectedColumns.toString());
+      formData.append("expectedRows", expectedRows.toString());
 
       const response = await fetch("/api/ocr", {
         method: "POST",
