@@ -65,7 +65,20 @@ Visit http://localhost:8080/api/health to check the system status:
 - **Endpoint**: `POST /api/ocr`
 - **Purpose**: Extract table data from uploaded images
 - **Accepts**: JPG, PNG, PDF files (max 10MB)
-- **Returns**: Structured table data or error details
+- **Parameters**:
+  - `file`: The uploaded image/PDF file
+  - `expectedColumns`: Number of expected columns (default: 13)
+  - `expectedRows`: Number of expected rows (default: 24)
+- **Returns**: Structured table data with specified dimensions or error details
+
+#### Table Configuration
+
+The OCR processing now supports configurable table dimensions to improve accuracy:
+
+- **Колони (Columns)**: 1-50 columns supported
+- **Редове (Rows)**: 1-100 rows supported
+- **Smart Parsing**: Uses multiple parsing strategies based on expected dimensions
+- **Interpolation**: Automatically fills missing cells with interpolated values
 
 ### Excel Export
 
