@@ -243,24 +243,31 @@ function interpolateValue(
 
       const interpolatedValue = aboveNum + (belowNum - aboveNum) * progress;
 
-      // Format according to detected pattern
+      // Format according to detected pattern with consistent rounding
       let formattedValue: string;
       if (isDecimal) {
-        formattedValue = interpolatedValue.toFixed(decimalPlaces);
+        // Always round to 1 decimal place for consistency
+        formattedValue = interpolatedValue.toFixed(1);
       } else {
+        // Check if interpolation results in non-integer
         const intValue = Math.round(interpolatedValue);
-        formattedValue = intValue.toString();
+        if (Math.abs(interpolatedValue - intValue) > 0.05) {
+          // Show as decimal if significantly non-integer
+          formattedValue = interpolatedValue.toFixed(1);
+        } else {
+          formattedValue = intValue.toString();
 
-        // Check for zero-padding pattern
-        const aboveIntStr = Math.round(aboveNum).toString();
-        const belowIntStr = Math.round(belowNum).toString();
-        const maxLength = Math.max(aboveIntStr.length, belowIntStr.length);
+          // Check for zero-padding pattern
+          const aboveIntStr = Math.round(aboveNum).toString();
+          const belowIntStr = Math.round(belowNum).toString();
+          const maxLength = Math.max(aboveIntStr.length, belowIntStr.length);
 
-        if (
-          maxLength > 1 &&
-          (aboveStr.startsWith("0") || belowStr.startsWith("0"))
-        ) {
-          formattedValue = intValue.toString().padStart(maxLength, "0");
+          if (
+            maxLength > 1 &&
+            (aboveStr.startsWith("0") || belowStr.startsWith("0"))
+          ) {
+            formattedValue = intValue.toString().padStart(maxLength, "0");
+          }
         }
       }
 
