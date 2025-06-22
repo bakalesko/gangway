@@ -207,18 +207,47 @@ export function InteractiveTable({
     }
   }, [isSelecting, handleMouseUp]);
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts and custom events
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "c" && selectedCells.size > 0) {
         e.preventDefault();
         copySelectedCells();
       }
+      if ((e.ctrlKey || e.metaKey) && e.key === "a") {
+        e.preventDefault();
+        // Select all cells
+        const allCells = new Set<string>();
+        // Add headers
+        for (let col = 0; col < headers.length; col++) {
+          allCells.add(`-1-${col}`);
+        }
+        // Add all data cells
+        for (let row = 0; row < rows.length; row++) {
+          for (let col = 0; col < rows[row].length; col++) {
+            allCells.add(`${row}-${col}`);
+          }
+        }
+        setSelectedCells(allCells);
+      }
+    };
+
+    const handleSelectAll = (e: CustomEvent) => {
+      const cellsToSelect = e.detail as string[];
+      setSelectedCells(new Set(cellsToSelect));
     };
 
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [copySelectedCells, selectedCells]);
+    window.addEventListener("selectAllCells", handleSelectAll as EventListener);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener(
+        "selectAllCells",
+        handleSelectAll as EventListener,
+      );
+    };
+  }, [copySelectedCells, selectedCells, headers, rows]);
 
   return (
     <div className="border rounded-lg overflow-hidden bg-background">
