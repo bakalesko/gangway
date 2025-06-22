@@ -59,6 +59,25 @@ const Index = () => {
       const response = await fetch("/api/health");
       if (response.ok) {
         addErrorLog("✅ API server is reachable");
+
+        // Also test credentials
+        try {
+          const credentialsResponse = await fetch("/api/test-credentials");
+          const credentialsData = await credentialsResponse.json();
+
+          if (credentialsResponse.ok && credentialsData.status === "success") {
+            addErrorLog(
+              "✅ Google Vision API credentials are properly configured",
+            );
+            addErrorLog(`📋 Project: ${credentialsData.debug.projectId}`);
+          } else {
+            addErrorLog(
+              `❌ Google Vision API credentials issue: ${credentialsData.message}`,
+            );
+          }
+        } catch (credError) {
+          addErrorLog(`❌ Failed to test credentials: ${credError.message}`);
+        }
       } else {
         addErrorLog(
           `❌ API server returned ${response.status}: ${response.statusText}`,
