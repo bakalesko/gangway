@@ -408,9 +408,11 @@ app.post("/api/ocr", upload.single("file"), async (req, res) => {
       });
     }
 
-    // Get table dimensions from request
+    // Get table dimensions and anchor values from request
     const expectedColumns = parseInt(req.body.expectedColumns) || 13;
     const expectedRows = parseInt(req.body.expectedRows) || 24;
+    const firstRowValues = req.body.firstRowValues || undefined;
+    const lastRowValues = req.body.lastRowValues || undefined;
 
     console.log(
       "Processing file:",
