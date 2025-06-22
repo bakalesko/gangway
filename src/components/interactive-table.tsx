@@ -226,25 +226,38 @@ export function InteractiveTable({
         <table ref={tableRef} className="w-full border-collapse">
           <thead>
             <tr>
-              {headers.map((header, index) => (
-                <th
-                  key={index}
-                  className="relative bg-muted font-semibold text-left border-r border-b border-border"
-                  style={{
-                    width: getColumnWidth(index),
-                    minWidth: getColumnWidth(index),
-                    maxWidth: getColumnWidth(index),
-                  }}
-                >
-                  <div className="p-2 pr-4">{header}</div>
+              {headers.map((header, index) => {
+                const headerCellKey = `-1-${index}`;
+                const isHeaderSelected = selectedCells.has(headerCellKey);
 
-                  {/* Column resize handle */}
-                  <div
-                    className="absolute top-0 right-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-primary/20 transition-colors"
-                    onMouseDown={(e) => handleColumnResizeStart(e, index)}
-                  />
-                </th>
-              ))}
+                return (
+                  <th
+                    key={index}
+                    className={cn(
+                      "relative bg-muted font-semibold text-left border-r border-b border-border",
+                      isHeaderSelected && "bg-primary/20",
+                    )}
+                    style={{
+                      width: getColumnWidth(index),
+                      minWidth: getColumnWidth(index),
+                      maxWidth: getColumnWidth(index),
+                    }}
+                    onMouseDown={(e) => handleCellMouseDown(e, -1, index)}
+                    onMouseEnter={() => handleCellMouseEnter(-1, index)}
+                  >
+                    <div className="p-2 pr-4">{header}</div>
+
+                    {/* Column resize handle */}
+                    <div
+                      className="absolute top-0 right-0 w-1 h-full cursor-col-resize bg-transparent hover:bg-primary/20 transition-colors z-10"
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        handleColumnResizeStart(e, index);
+                      }}
+                    />
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
