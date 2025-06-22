@@ -8,14 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+// import { SimpleTable } from "@/components/simple-table";
 import {
   Upload,
   Download,
@@ -25,13 +18,22 @@ import {
   AlertCircle,
   Scan,
   Loader2,
+  Settings,
+  MousePointer,
+  Plus,
+  Minus,
+  RotateCcw,
 } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
 // Type definitions for table data
 interface TableCell {
   value: string;
   interpolated?: boolean;
+  missingRow?: boolean; // Mark entire missing rows
 }
 
 interface TableData {
@@ -49,43 +51,34 @@ const Index = () => {
     type: "success" | "error";
     message: string;
   } | null>(null);
-  const [errorLogs, setErrorLogs] = useState<string[]>([]);
+
+  // Table configuration
+  const [expectedColumns, setExpectedColumns] = useState(13);
+  const [expectedRows, setExpectedRows] = useState(24);
+
+  // First and last row anchor values for better interpolation
+  const [firstRowValues, setFirstRowValues] = useState("");
+  const [lastRowValues, setLastRowValues] = useState("");
+
+  // Global table sizing
+  const [globalColumnWidth, setGlobalColumnWidth] = useState(120);
+  const [globalRowHeight, setGlobalRowHeight] = useState(40);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Check system status
-  const checkSystemStatus = async () => {
-    addErrorLog("🔍 Checking system status...");
+  // Helper functions for table sizing
 
-    try {
-      // Test basic connectivity first
-      const response = await fetch("/api/health");
+  const adjustGlobalColumnWidth = (delta: number) => {
+    setGlobalColumnWidth((prev) => Math.max(80, prev + delta));
+  };
 
-      if (response.ok) {
-        addErrorLog("✅ API server is reachable");
+  const adjustGlobalRowHeight = (delta: number) => {
+    setGlobalRowHeight((prev) => Math.max(30, prev + delta));
+  };
 
-        // In development mode, API endpoints might not work properly
-        // but the credentials should be configured in the build process
-        addErrorLog("💡 Development mode detected");
-        addErrorLog("📋 API endpoints are designed for production (Vercel)");
-        addErrorLog(
-          "🧪 Test with actual image upload to verify Google Vision API",
-        );
-      } else {
-        addErrorLog(
-          `❌ API server returned ${response.status}: ${response.statusText}`,
-        );
-        addErrorLog("⚠️ This is expected in development mode");
-        addErrorLog("🚀 Deploy to Vercel to test full functionality");
-      }
-    } catch (error) {
-      addErrorLog("⚠️ API endpoints not available in development mode");
-      addErrorLog(
-        "💡 This is normal - the app is configured for Vercel deployment",
-      );
-      addErrorLog("🧪 Try uploading an image to test Google Vision API");
-      addErrorLog("🚀 For full testing, deploy to Vercel");
-    }
+  const resetTableSizing = () => {
+    setGlobalColumnWidth(120);
+    setGlobalRowHeight(40);
   };
 
   // File selection handler
@@ -131,12 +124,6 @@ const Index = () => {
     }
   };
 
-  // Add error to log
-  const addErrorLog = (error: string) => {
-    const timestamp = new Date().toLocaleTimeString();
-    setErrorLogs((prev) => [`[${timestamp}] ${error}`, ...prev.slice(0, 9)]);
-  };
-
   // OCR scan handler
   const handleScanTable = async () => {
     if (!selectedFile) {
@@ -154,6 +141,14 @@ const Index = () => {
       // Try to use the API endpoint first
       const formData = new FormData();
       formData.append("file", selectedFile);
+      formData.append("expectedColumns", expectedColumns.toString());
+      formData.append("expectedRows", expectedRows.toString());
+      if (firstRowValues.trim()) {
+        formData.append("firstRowValues", firstRowValues.trim());
+      }
+      if (lastRowValues.trim()) {
+        formData.append("lastRowValues", lastRowValues.trim());
+      }
 
       const response = await fetch("/api/ocr", {
         method: "POST",
@@ -170,47 +165,26 @@ const Index = () => {
             message: "✅ Image scanned successfully with Google Vision API!",
           });
         } else {
-          // API returned mock data, log the errors
-          const debug = data.debug || {};
-          const errorDetails = [];
-
-          if (!debug.credentialsFound) {
-            errorDetails.push("Google Cloud credentials not configured");
-          }
-          if (!debug.useRealAPI) {
-            errorDetails.push("Failed to connect to Google Vision API");
-          }
-
-          const mainError = `Google Vision API connection failed: ${errorDetails.join(", ")}`;
-          addErrorLog(mainError);
-
           setAlertMessage({
             type: "error",
             message:
-              "❌ Cannot process image - Google Vision API not available. Check error log below.",
+              "❌ Cannot process image - Google Vision API not available.",
           });
         }
       } else {
         const errorData = await response
           .json()
           .catch(() => ({ error: "Unknown API error" }));
-        const errorMsg = `API request failed: ${errorData.error || response.statusText}`;
-        addErrorLog(errorMsg);
 
         setAlertMessage({
           type: "error",
-          message:
-            "��� Failed to process image. Check error log below for details.",
+          message: "❌ Failed to process image. Please try again.",
         });
       }
     } catch (error) {
-      const errorMsg = `Network error: ${error instanceof Error ? error.message : "Unknown error"}`;
-      addErrorLog(errorMsg);
-
       setAlertMessage({
         type: "error",
-        message:
-          "❌ Cannot connect to processing server. Check error log below.",
+        message: "❌ Cannot connect to processing server.",
       });
     } finally {
       setIsScanning(false);
@@ -287,31 +261,13 @@ const Index = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response
-          .json()
-          .catch(() => ({ error: "Unknown error" }));
-        const errorMsg = `Excel export failed (${response.status}): ${errorData.error || response.statusText}`;
-        addErrorLog(errorMsg);
-        throw new Error(errorData.error || "Failed to export data");
-      }
-
-      // Check if response is actually Excel file
-      const contentType = response.headers.get("Content-Type");
-      if (
-        !contentType?.includes("spreadsheetml") &&
-        !contentType?.includes("excel")
-      ) {
-        const errorMsg = `Invalid response type: ${contentType}. Expected Excel file.`;
-        addErrorLog(errorMsg);
-        throw new Error("Server returned invalid file format");
+        throw new Error("Failed to export data");
       }
 
       // Create download link
       const blob = await response.blob();
 
       if (blob.size === 0) {
-        const errorMsg = "Excel export returned empty file";
-        addErrorLog(errorMsg);
         throw new Error("Generated file is empty");
       }
 
@@ -341,14 +297,9 @@ const Index = () => {
         message: `Excel file "${filename}" downloaded successfully!`,
       });
     } catch (error) {
-      console.error("Export Error:", error);
-      const errorMsg =
-        error instanceof Error ? error.message : "Unknown download error";
-      addErrorLog(`Excel download failed: ${errorMsg}`);
-
       setAlertMessage({
         type: "error",
-        message: "❌ Excel download failed. Check error log below for details.",
+        message: "❌ Excel download failed. Please try again.",
       });
     } finally {
       setIsDownloading(false);
@@ -356,7 +307,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header Section */}
         <div className="text-center mb-8">
@@ -367,6 +318,9 @@ const Index = () => {
             <h1 className="text-4xl font-bold text-foreground">
               Lab Table Scanner
             </h1>
+            <div className="ml-4">
+              <ThemeToggle />
+            </div>
           </div>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Transform handwritten lab tables into digital data. Upload your
@@ -383,7 +337,7 @@ const Index = () => {
               }
               className={cn(
                 alertMessage.type === "success" &&
-                  "border-green-200 bg-green-50 text-green-800",
+                  "border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-400",
               )}
             >
               {alertMessage.type === "success" ? (
@@ -460,69 +414,109 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          {/* Actions Section */}
+          {/* Anchor Rows Configuration */}
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Download className="h-5 w-5" />
-                Export Options
+                <Settings className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                Anchor Rows for Interpolation
               </CardTitle>
               <CardDescription>
-                Copy or download your processed table data
+                Define first and last row values for better interpolation when
+                OCR misses data
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <Button
-                  onClick={copyTableToClipboard}
-                  disabled={!tableData}
-                  variant="outline"
-                  className="w-full"
-                  size="lg"
-                >
-                  <Copy className="mr-2 h-4 w-4" />
-                  Copy Table
-                </Button>
-
-                <Button
-                  onClick={downloadAsExcel}
-                  disabled={!tableData || isDownloading}
-                  className="w-full"
-                  size="lg"
-                >
-                  {isDownloading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Downloading...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="mr-2 h-4 w-4" />
-                      Download as .xlsx
-                    </>
-                  )}
-                </Button>
-
-                {tableData && (
-                  <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-                    <p className="text-sm font-medium mb-2">
-                      Table Information:
-                    </p>
-                    <div className="text-sm text-muted-foreground space-y-1">
-                      <p>Columns: {tableData.headers.length}</p>
-                      <p>Rows: {tableData.rows.length}</p>
-                      <p>
-                        Interpolated cells:{" "}
-                        {
-                          tableData.rows
-                            .flat()
-                            .filter((cell) => cell.interpolated).length
-                        }
-                      </p>
-                    </div>
+              {/* Table Configuration */}
+              <div className="mb-6 p-4 bg-muted/30 rounded-lg border">
+                <div className="flex items-center gap-2 mb-3">
+                  <Settings className="h-4 w-4" />
+                  <Label className="text-sm font-medium">
+                    Table Configuration
+                  </Label>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label
+                      htmlFor="columns"
+                      className="text-xs text-muted-foreground"
+                    >
+                      Columns
+                    </Label>
+                    <Input
+                      id="columns"
+                      type="number"
+                      min="1"
+                      max="50"
+                      value={expectedColumns}
+                      onChange={(e) =>
+                        setExpectedColumns(Number(e.target.value))
+                      }
+                      className="mt-1"
+                    />
                   </div>
-                )}
+                  <div>
+                    <Label
+                      htmlFor="rows"
+                      className="text-xs text-muted-foreground"
+                    >
+                      Rows
+                    </Label>
+                    <Input
+                      id="rows"
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={expectedRows}
+                      onChange={(e) => setExpectedRows(Number(e.target.value))}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Set expected table dimensions for more accurate reading
+                </p>
               </div>
+
+              {/* Anchor Values */}
+              <div className="space-y-3">
+                <div>
+                  <Label
+                    htmlFor="firstRow"
+                    className="text-xs text-blue-700 dark:text-blue-300"
+                  >
+                    First Row (comma or space separated)
+                  </Label>
+                  <Input
+                    id="firstRow"
+                    type="text"
+                    placeholder="e.g. 1, 5.2, 10.5, 15.8, ..."
+                    value={firstRowValues}
+                    onChange={(e) => setFirstRowValues(e.target.value)}
+                    className="mt-1 border-blue-200 focus:border-blue-400 dark:border-blue-700"
+                  />
+                </div>
+                <div>
+                  <Label
+                    htmlFor="lastRow"
+                    className="text-xs text-blue-700 dark:text-blue-300"
+                  >
+                    Last Row (comma or space separated)
+                  </Label>
+                  <Input
+                    id="lastRow"
+                    type="text"
+                    placeholder="e.g. 24, 127.4, 245.2, 368.9, ..."
+                    value={lastRowValues}
+                    onChange={(e) => setLastRowValues(e.target.value)}
+                    className="mt-1 border-blue-200 focus:border-blue-400 dark:border-blue-700"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-3">
+                💡 When OCR misses entire rows, these values will be used as
+                anchors for interpolation
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -533,150 +527,204 @@ const Index = () => {
             <CardHeader>
               <CardTitle>Extracted Table Data</CardTitle>
               <CardDescription>
-                Edit any cell values as needed. Cells with light blue background
-                were interpolated by OCR.
+                Edit cell values • Adjust column widths and row heights with +/-
+                buttons • Copy or download the table
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="border rounded-lg overflow-hidden">
-                <div className="overflow-auto max-h-96">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        {tableData.headers.map((header, index) => (
-                          <TableHead key={index} className="font-semibold">
-                            {header}
-                          </TableHead>
-                        ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {tableData.rows.map((row, rowIndex) => (
-                        <TableRow key={rowIndex}>
-                          {row.map((cell, cellIndex) => (
-                            <TableCell
-                              key={cellIndex}
-                              className={cn(
-                                "p-2",
-                                cell.interpolated &&
-                                  "bg-blue-50 dark:bg-blue-950/20",
-                              )}
-                            >
-                              <input
-                                type="text"
-                                value={cell.value}
-                                onChange={(e) =>
-                                  updateCellValue(
-                                    rowIndex,
-                                    cellIndex,
-                                    e.target.value,
-                                  )
-                                }
-                                className={cn(
-                                  "w-full min-w-[100px] px-2 py-1 bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-primary rounded",
-                                  cell.interpolated &&
-                                    "bg-blue-50/50 dark:bg-blue-950/10",
-                                )}
-                              />
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+              {/* Copy/Export Buttons */}
+              <div className="flex gap-2 mb-4">
+                <Button
+                  onClick={copyTableToClipboard}
+                  variant="outline"
+                  size="sm"
+                >
+                  <Copy className="h-4 w-4 mr-1" />
+                  Copy Table
+                </Button>
+                <Button
+                  onClick={downloadAsExcel}
+                  disabled={isDownloading}
+                  size="sm"
+                >
+                  {isDownloading ? (
+                    <>
+                      <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                      Downloading...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="mr-1 h-4 w-4" />
+                      Excel
+                    </>
+                  )}
+                </Button>
+                <Button onClick={resetTableSizing} variant="outline" size="sm">
+                  <RotateCcw className="h-4 w-4 mr-1" />
+                  Reset Sizes
+                </Button>
+              </div>
+
+              {/* Table Size Controls */}
+              <div className="border rounded-lg p-3 bg-muted/30 mb-4">
+                <h4 className="text-sm font-medium mb-3">
+                  Table Size Controls
+                </h4>
+                <div className="flex gap-6 items-center">
+                  {/* Column Width Control */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Column Width:</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => adjustGlobalColumnWidth(-10)}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="min-w-[60px] text-center text-sm font-mono bg-background border rounded px-2 py-1">
+                      {globalColumnWidth}px
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => adjustGlobalColumnWidth(10)}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* Row Height Control */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Row Height:</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => adjustGlobalRowHeight(-5)}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="min-w-[50px] text-center text-sm font-mono bg-background border rounded px-2 py-1">
+                      {globalRowHeight}px
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => adjustGlobalRowHeight(5)}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
 
-              <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-blue-50 border border-blue-200 rounded"></div>
-                  <span>Interpolated values</span>
+              {/* Simple Table */}
+              <div className="border rounded-lg overflow-auto max-h-96 bg-background">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr>
+                      {tableData.headers.map((header, index) => (
+                        <th
+                          key={index}
+                          className="bg-muted font-semibold text-left border-r border-b border-border p-2 sticky top-0"
+                          style={{
+                            width: globalColumnWidth,
+                            minWidth: globalColumnWidth,
+                            maxWidth: globalColumnWidth,
+                          }}
+                        >
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tableData.rows.map((row, rowIndex) => (
+                      <tr key={rowIndex} style={{ height: globalRowHeight }}>
+                        {row.map((cell, cellIndex) => (
+                          <td
+                            key={cellIndex}
+                            className={cn(
+                              "border-r border-b border-border p-1",
+                              cell.interpolated &&
+                                !cell.missingRow &&
+                                "bg-blue-50 dark:bg-blue-950/20",
+                              cell.missingRow &&
+                                "bg-blue-100 dark:bg-blue-900/30",
+                            )}
+                            style={{
+                              width: globalColumnWidth,
+                              height: globalRowHeight,
+                              minWidth: globalColumnWidth,
+                              maxWidth: globalColumnWidth,
+                            }}
+                          >
+                            <input
+                              type="text"
+                              value={cell.value}
+                              onChange={(e) =>
+                                updateCellValue(
+                                  rowIndex,
+                                  cellIndex,
+                                  e.target.value,
+                                )
+                              }
+                              className={cn(
+                                "w-full h-full px-2 py-1 bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-primary rounded text-sm",
+                                cell.interpolated &&
+                                  !cell.missingRow &&
+                                  "bg-blue-50/50 dark:bg-blue-950/10",
+                                cell.missingRow &&
+                                  "bg-blue-100/50 dark:bg-blue-900/20",
+                              )}
+                              style={{ height: globalRowHeight - 2 }}
+                            />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded"></div>
+                    <span>Interpolated cells</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700 rounded"></div>
+                    <span>Missing rows</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-background border border-border rounded"></div>
+                    <span>Original values</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-background border border-border rounded"></div>
-                  <span>Original values</span>
+                <div className="text-xs text-muted-foreground">
+                  📊 {tableData.rows.length} rows × {tableData.headers.length}{" "}
+                  columns •{" "}
+                  {
+                    tableData.rows
+                      .flat()
+                      .filter((cell) => cell.interpolated && !cell.missingRow)
+                      .length
+                  }{" "}
+                  interpolated •{" "}
+                  {
+                    tableData.rows.flat().filter((cell) => cell.missingRow)
+                      .length
+                  }{" "}
+                  missing rows
                 </div>
               </div>
             </CardContent>
           </Card>
         )}
-
-        {/* Error Log Section - Always visible now for debugging */}
-        <Card className="mt-8 shadow-lg border-orange-200">
-          <CardHeader className="bg-orange-50">
-            <CardTitle className="flex items-center gap-2 text-orange-800">
-              <AlertCircle className="h-5 w-5" />
-              System Status & Error Log
-              <div className="ml-auto flex gap-2">
-                <Button onClick={checkSystemStatus} variant="outline" size="sm">
-                  Check System Status
-                </Button>
-                {errorLogs.length > 0 && (
-                  <Button
-                    onClick={() => setErrorLogs([])}
-                    variant="outline"
-                    size="sm"
-                  >
-                    Clear Log
-                  </Button>
-                )}
-              </div>
-            </CardTitle>
-            <CardDescription className="text-orange-600">
-              {errorLogs.length > 0
-                ? "Connection and processing errors are logged here for debugging"
-                : "No errors logged yet. Click 'Check System Status' to test the connection."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-4">
-            {errorLogs.length > 0 ? (
-              <div className="space-y-2 max-h-40 overflow-y-auto mb-4">
-                {errorLogs.map((log, index) => (
-                  <div
-                    key={index}
-                    className={cn(
-                      "text-sm font-mono p-2 border rounded",
-                      log.includes("✅")
-                        ? "bg-green-50 border-green-200 text-green-800"
-                        : "bg-red-50 border-red-200 text-red-800",
-                    )}
-                  >
-                    {log}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-sm text-muted-foreground mb-4 p-3 bg-gray-50 border rounded">
-                No system errors recorded. Use the "Check System Status" button
-                to test connectivity.
-              </div>
-            )}
-
-            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
-              <p className="text-sm text-yellow-800">
-                <strong>Troubleshooting steps:</strong>
-              </p>
-              <ul className="text-sm text-yellow-700 mt-1 space-y-1">
-                <li>
-                  • <strong>For Google Vision API:</strong> Check if credentials
-                  are configured in environment variables
-                </li>
-                <li>
-                  • <strong>For Excel export:</strong> Ensure the API server is
-                  running and accessible
-                </li>
-                <li>
-                  • <strong>For image processing:</strong> Try different image
-                  formats (JPG, PNG, PDF)
-                </li>
-                <li>
-                  • <strong>Network issues:</strong> Check browser developer
-                  console for additional errors
-                </li>
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

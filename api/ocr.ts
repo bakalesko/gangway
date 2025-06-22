@@ -14,6 +14,7 @@ export const config = {
 interface TableCell {
   value: string;
   interpolated: boolean;
+  missingRow?: boolean; // Mark entire missing rows
 }
 
 // Helper function to check if a value is a valid number
@@ -27,19 +28,99 @@ function cleanNumericValue(value: string): string {
   return value.replace(/[,\s]/g, "").replace(/^-+|[\-\s]+$/g, "");
 }
 
-// Helper function to interpolate missing values
+// Advanced numeric interpolation with digit pattern matching
 function interpolateValue(
   data: (TableCell | null)[][],
   rowIndex: number,
   colIndex: number,
+  firstRowAnchor?: string[],
+  lastRowAnchor?: string[],
 ): string {
+  const totalRows = data.length;
+
+  // Try to get anchor values for this column
+  const firstAnchorValue = firstRowAnchor?.[colIndex];
+  const lastAnchorValue = lastRowAnchor?.[colIndex];
+
+  // Advanced numeric interpolation with pattern analysis
+  if (
+    firstAnchorValue &&
+    lastAnchorValue &&
+    isValidNumber(firstAnchorValue) &&
+    isValidNumber(lastAnchorValue)
+  ) {
+    const firstNum = parseFloat(cleanNumericValue(firstAnchorValue));
+    const lastNum = parseFloat(cleanNumericValue(lastAnchorValue));
+
+    if (!isNaN(firstNum) && !isNaN(lastNum)) {
+      // Analyze number patterns from anchor values
+      const firstStr = firstAnchorValue.trim();
+      const lastStr = lastAnchorValue.trim();
+
+      // Determine if numbers are integers or decimals
+      const isDecimal = firstStr.includes(".") || lastStr.includes(".");
+
+      // Determine decimal places (if decimal)
+      let decimalPlaces = 0;
+      if (isDecimal) {
+        const firstDecimals = firstStr.includes(".")
+          ? firstStr.split(".")[1]?.length || 0
+          : 0;
+        const lastDecimals = lastStr.includes(".")
+          ? lastStr.split(".")[1]?.length || 0
+          : 0;
+        decimalPlaces = Math.max(firstDecimals, lastDecimals);
+      }
+
+      // Progressive interpolation based on row position
+      const progress = rowIndex / (totalRows - 1);
+      const interpolatedValue = firstNum + (lastNum - firstNum) * progress;
+
+      // Format according to detected pattern
+      let formattedValue: string;
+
+      if (isDecimal) {
+        formattedValue = interpolatedValue.toFixed(decimalPlaces);
+      } else {
+        // Integer formatting with potential zero-padding
+        const intValue = Math.round(interpolatedValue);
+        formattedValue = intValue.toString();
+
+        // Check if we need zero-padding (e.g., 19 -> 9 should be 09)
+        if (firstNum > 0 && lastNum > 0) {
+          const firstIntStr = Math.round(firstNum).toString();
+          const lastIntStr = Math.round(lastNum).toString();
+
+          // If first number has more digits than last, pad the result
+          if (
+            firstIntStr.length > lastIntStr.length &&
+            firstIntStr.length > 1
+          ) {
+            formattedValue = intValue
+              .toString()
+              .padStart(firstIntStr.length, "0");
+          }
+        }
+      }
+
+      console.log(
+        `🎯 Smart interpolation for row ${rowIndex}, col ${colIndex}: ${formattedValue} (pattern: ${isDecimal ? "decimal" : "integer"})`,
+      );
+      return formattedValue;
+    }
+  }
+
+  // Fallback to traditional nearest-neighbor interpolation with pattern matching
   let above: string | null = null;
   let below: string | null = null;
+  let aboveIndex = -1;
+  let belowIndex = -1;
 
   // Look for value above
   for (let i = rowIndex - 1; i >= 0; i--) {
     if (data[i] && data[i][colIndex] && !data[i][colIndex]?.interpolated) {
       above = data[i][colIndex]?.value || null;
+      aboveIndex = i;
       break;
     }
   }
@@ -48,96 +129,348 @@ function interpolateValue(
   for (let i = rowIndex + 1; i < data.length; i++) {
     if (data[i] && data[i][colIndex] && !data[i][colIndex]?.interpolated) {
       below = data[i][colIndex]?.value || null;
+      belowIndex = i;
       break;
     }
   }
 
-  // Interpolate between above and below
-  if (above && below) {
+  // Smart interpolation between found values with pattern analysis
+  if (above && below && isValidNumber(above) && isValidNumber(below)) {
     const aboveNum = parseFloat(cleanNumericValue(above));
     const belowNum = parseFloat(cleanNumericValue(below));
+
     if (!isNaN(aboveNum) && !isNaN(belowNum)) {
-      return ((aboveNum + belowNum) / 2).toString();
+      // Analyze patterns from nearby values
+      const aboveStr = above.trim();
+      const belowStr = below.trim();
+
+      const isDecimal = aboveStr.includes(".") || belowStr.includes(".");
+      let decimalPlaces = 0;
+      if (isDecimal) {
+        const aboveDecimals = aboveStr.includes(".")
+          ? aboveStr.split(".")[1]?.length || 0
+          : 0;
+        const belowDecimals = belowStr.includes(".")
+          ? belowStr.split(".")[1]?.length || 0
+          : 0;
+        decimalPlaces = Math.max(aboveDecimals, belowDecimals);
+      }
+
+      // Linear interpolation based on position between above and below
+      const totalDistance = belowIndex - aboveIndex;
+      const currentDistance = rowIndex - aboveIndex;
+      const progress = currentDistance / totalDistance;
+
+      const interpolatedValue = aboveNum + (belowNum - aboveNum) * progress;
+
+      // Format according to detected pattern
+      let formattedValue: string;
+      if (isDecimal) {
+        formattedValue = interpolatedValue.toFixed(decimalPlaces);
+      } else {
+        const intValue = Math.round(interpolatedValue);
+        formattedValue = intValue.toString();
+
+        // Check for zero-padding pattern
+        const aboveIntStr = Math.round(aboveNum).toString();
+        const belowIntStr = Math.round(belowNum).toString();
+        const maxLength = Math.max(aboveIntStr.length, belowIntStr.length);
+
+        if (
+          maxLength > 1 &&
+          (aboveStr.startsWith("0") || belowStr.startsWith("0"))
+        ) {
+          formattedValue = intValue.toString().padStart(maxLength, "0");
+        }
+      }
+
+      console.log(
+        `📈 Pattern interpolation for row ${rowIndex}, col ${colIndex}: ${formattedValue}`,
+      );
+      return formattedValue;
     }
   }
 
-  // Use above value if available
-  if (above) return above;
+  // Use anchor values as fallback
+  if (firstAnchorValue && isValidNumber(firstAnchorValue)) {
+    console.log(
+      `⚓ Using first anchor for row ${rowIndex}, col ${colIndex}: ${firstAnchorValue}`,
+    );
+    return cleanNumericValue(firstAnchorValue);
+  }
 
-  // Use below value if available
+  if (lastAnchorValue && isValidNumber(lastAnchorValue)) {
+    console.log(
+      `⚓ Using last anchor for row ${rowIndex}, col ${colIndex}: ${lastAnchorValue}`,
+    );
+    return cleanNumericValue(lastAnchorValue);
+  }
+
+  // Use single nearby value if available
+  if (above) return above;
   if (below) return below;
 
   // Default fallback
   return "0";
 }
 
-// Helper function to parse text into structured table
-function parseTextToTable(text: string): TableCell[][] {
+// Helper function to parse text into structured table with fixed dimensions and anchor rows
+function parseTextToTable(
+  text: string,
+  expectedCols: number = 13,
+  expectedRows: number = 24,
+  firstRowValues?: string,
+  lastRowValues?: string,
+): TableCell[][] {
+  console.log(
+    `🎯 Parsing table with expected dimensions: ${expectedCols} columns x ${expectedRows} rows`,
+  );
+
+  // Parse anchor rows if provided
+  let firstRowAnchor: string[] | undefined;
+  let lastRowAnchor: string[] | undefined;
+
+  if (firstRowValues) {
+    firstRowAnchor = firstRowValues
+      .split(/[,\s]+/)
+      .map((v) => v.trim())
+      .filter((v) => v.length > 0);
+    console.log(`⚓ First row anchor: [${firstRowAnchor.join(", ")}]`);
+  }
+
+  if (lastRowValues) {
+    lastRowAnchor = lastRowValues
+      .split(/[,\s]+/)
+      .map((v) => v.trim())
+      .filter((v) => v.length > 0);
+    console.log(`⚓ Last row anchor: [${lastRowAnchor.join(", ")}]`);
+  }
+
   const lines = text.split("\n").filter((line) => line.trim().length > 0);
+  console.log(`📝 Found ${lines.length} non-empty lines in OCR text`);
+
+  // Try multiple parsing strategies for better accuracy
   const rawTable: (string | null)[][] = [];
 
-  // Parse lines into table structure
+  // Strategy 1: Split by multiple spaces or tabs (most common)
+  let parseStrategy = "multiple-spaces";
   for (const line of lines) {
     const cells = line
       .split(/\s{2,}|\t/)
       .map((cell) => cell.trim())
       .filter((cell) => cell.length > 0);
+
     if (cells.length > 0) {
       rawTable.push(cells);
     }
   }
 
-  if (rawTable.length === 0) {
-    return [];
-  }
+  // Strategy 2: If we don't have enough columns, try single space separation
+  const maxColsFound = Math.max(...rawTable.map((row) => row.length));
+  if (maxColsFound < expectedCols * 0.7) {
+    // If we have less than 70% of expected columns
+    console.log(
+      `🔄 Switching to single-space parsing strategy (found ${maxColsFound}/${expectedCols} columns)`,
+    );
+    parseStrategy = "single-spaces";
+    rawTable.length = 0; // Clear previous results
 
-  // Determine the maximum number of columns
-  const maxCols = Math.max(...rawTable.map((row) => row.length));
+    for (const line of lines) {
+      const cells = line
+        .split(/\s+/)
+        .map((cell) => cell.trim())
+        .filter((cell) => cell.length > 0);
 
-  // Normalize table structure and identify numeric cells
-  const normalizedTable: (TableCell | null)[][] = rawTable.map((row) => {
-    const normalizedRow: (TableCell | null)[] = [];
-    for (let i = 0; i < maxCols; i++) {
-      const cellValue = row[i];
-      if (cellValue && isValidNumber(cellValue)) {
-        normalizedRow[i] = {
-          value: cleanNumericValue(cellValue),
-          interpolated: false,
-        };
-      } else if (cellValue) {
-        // Non-numeric values (like headers)
-        normalizedRow[i] = {
-          value: cellValue,
-          interpolated: false,
-        };
-      } else {
-        normalizedRow[i] = null;
+      if (cells.length > 0) {
+        rawTable.push(cells);
       }
     }
-    return normalizedRow;
-  });
+  }
 
-  // Interpolate missing values
+  console.log(
+    `📊 Parse strategy: ${parseStrategy}, found ${rawTable.length} rows`,
+  );
+
+  if (rawTable.length === 0) {
+    console.log("⚠️ No table data found, creating empty structure");
+    return createEmptyTable(expectedCols, expectedRows);
+  }
+
+  // Use expected dimensions exactly as specified
+  const targetCols = expectedCols;
+  const targetRows = expectedRows; // Force exact row count
+
+  console.log(
+    `🎯 Target structure: ${targetCols} columns x ${targetRows} rows`,
+  );
+
+  // Take only the first targetRows from rawTable (strict limit)
+  const limitedRawTable = rawTable.slice(0, targetRows);
+  console.log(
+    `📏 Limited raw table to ${limitedRawTable.length} rows (max: ${targetRows})`,
+  );
+
+  // Initialize the normalized table with exact dimensions
+  const normalizedTable: (TableCell | null)[][] = [];
+
+  for (let rowIndex = 0; rowIndex < targetRows; rowIndex++) {
+    const row: (TableCell | null)[] = [];
+    const sourceRow = limitedRawTable[rowIndex] || [];
+
+    for (let colIndex = 0; colIndex < targetCols; colIndex++) {
+      // Take only the first targetCols from each row (strict limit)
+      let cellValue =
+        colIndex < sourceRow.length ? sourceRow[colIndex] : undefined;
+
+      // Override with anchor values for first and last rows if provided
+      if (rowIndex === 0 && firstRowAnchor && firstRowAnchor[colIndex]) {
+        cellValue = firstRowAnchor[colIndex];
+        console.log(
+          `🎯 Using first row anchor for [0,${colIndex}]: ${cellValue}`,
+        );
+      } else if (
+        rowIndex === targetRows - 1 &&
+        lastRowAnchor &&
+        lastRowAnchor[colIndex]
+      ) {
+        cellValue = lastRowAnchor[colIndex];
+        console.log(
+          `🎯 Using last row anchor for [${rowIndex},${colIndex}]: ${cellValue}`,
+        );
+      }
+
+      if (cellValue && cellValue.trim()) {
+        // Always try to treat as numeric value first
+        if (isValidNumber(cellValue)) {
+          row[colIndex] = {
+            value: cellValue.trim(), // Keep original format for pattern analysis
+            interpolated: false,
+          };
+        } else {
+          // For first row (headers), keep as-is, otherwise try to extract numbers
+          if (rowIndex === 0) {
+            row[colIndex] = {
+              value: cellValue.trim(),
+              interpolated: false,
+            };
+          } else {
+            // Try to extract numeric parts from mixed content
+            const numericMatch = cellValue.match(/[\d.,]+/);
+            if (numericMatch && isValidNumber(numericMatch[0])) {
+              row[colIndex] = {
+                value: numericMatch[0].trim(),
+                interpolated: false,
+              };
+            } else {
+              row[colIndex] = null; // Will be interpolated later
+            }
+          }
+        }
+      } else {
+        row[colIndex] = null; // Will be interpolated later
+      }
+    }
+    normalizedTable.push(row);
+  }
+
+  // Enhanced interpolation for missing values
+  console.log("🔧 Interpolating missing values...");
+  let interpolatedCount = 0;
+
+  // First, detect entirely missing rows
+  const missingRows = new Set<number>();
+  for (let rowIndex = 1; rowIndex < normalizedTable.length - 1; rowIndex++) {
+    // Skip header and last row
+    const row = normalizedTable[rowIndex];
+    const hasAnyValue = row.some((cell) => cell && !cell.interpolated);
+    if (!hasAnyValue) {
+      missingRows.add(rowIndex);
+      console.log(`🔍 Detected missing row: ${rowIndex}`);
+    }
+  }
+
   for (let rowIndex = 0; rowIndex < normalizedTable.length; rowIndex++) {
-    for (let colIndex = 0; colIndex < maxCols; colIndex++) {
+    for (let colIndex = 0; colIndex < targetCols; colIndex++) {
       if (!normalizedTable[rowIndex][colIndex]) {
         const interpolatedValue = interpolateValue(
           normalizedTable,
           rowIndex,
           colIndex,
+          firstRowAnchor,
+          lastRowAnchor,
         );
+
+        // Round to 1 decimal place if anchor rows have decimals
+        let finalValue = interpolatedValue;
+        if (
+          firstRowAnchor &&
+          lastRowAnchor &&
+          firstRowAnchor[colIndex] &&
+          lastRowAnchor[colIndex] &&
+          isValidNumber(firstRowAnchor[colIndex]) &&
+          isValidNumber(lastRowAnchor[colIndex])
+        ) {
+          const firstHasDecimal = firstRowAnchor[colIndex].includes(".");
+          const lastHasDecimal = lastRowAnchor[colIndex].includes(".");
+          if (firstHasDecimal || lastHasDecimal) {
+            const numValue = parseFloat(finalValue);
+            if (!isNaN(numValue)) {
+              finalValue = numValue.toFixed(1);
+            }
+          }
+        }
+
         normalizedTable[rowIndex][colIndex] = {
-          value: interpolatedValue,
+          value: finalValue,
           interpolated: true,
+          missingRow: missingRows.has(rowIndex), // Mark if entire row is missing
         };
+        interpolatedCount++;
       }
     }
   }
 
-  // Convert to final format (remove null values)
-  return normalizedTable.map((row) =>
+  console.log(`✅ Interpolated ${interpolatedCount} missing cells`);
+
+  // Convert to final format (remove null values, but this shouldn't happen now)
+  const finalTable = normalizedTable.map((row) =>
     row.filter((cell): cell is TableCell => cell !== null),
   );
+
+  console.log(
+    `📋 Final table: ${finalTable.length} rows x ${finalTable[0]?.length || 0} columns`,
+  );
+  return finalTable;
+}
+
+// Helper function to create empty table structure
+function createEmptyTable(cols: number, rows: number): TableCell[][] {
+  console.log(`📝 Creating empty table structure: ${cols}x${rows}`);
+  const table: TableCell[][] = [];
+
+  // Create header row
+  const headers: TableCell[] = [];
+  for (let i = 0; i < cols; i++) {
+    headers.push({
+      value: `Column ${i + 1}`,
+      interpolated: true,
+    });
+  }
+  table.push(headers);
+
+  // Create data rows
+  for (let rowIndex = 1; rowIndex < rows; rowIndex++) {
+    const row: TableCell[] = [];
+    for (let colIndex = 0; colIndex < cols; colIndex++) {
+      row.push({
+        value: "",
+        interpolated: true,
+      });
+    }
+    table.push(row);
+  }
+
+  return table;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -166,6 +499,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    // Get table dimensions and anchor values from request
+    const expectedColumns =
+      parseInt(
+        Array.isArray(fields.expectedColumns)
+          ? fields.expectedColumns[0]
+          : fields.expectedColumns,
+      ) || 13;
+    const expectedRows =
+      parseInt(
+        Array.isArray(fields.expectedRows)
+          ? fields.expectedRows[0]
+          : fields.expectedRows,
+      ) || 24;
+    const firstRowValues = Array.isArray(fields.firstRowValues)
+      ? fields.firstRowValues[0]
+      : fields.firstRowValues;
+    const lastRowValues = Array.isArray(fields.lastRowValues)
+      ? fields.lastRowValues[0]
+      : fields.lastRowValues;
+
     // Validate file type
     const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
     if (!allowedTypes.includes(file.mimetype || "")) {
@@ -174,7 +527,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    console.log("Processing file:", file.originalFilename, "Size:", file.size);
+    console.log(
+      "Processing file:",
+      file.originalFilename,
+      "Size:",
+      file.size,
+      "Expected dimensions:",
+      `${expectedColumns}x${expectedRows}`,
+      "Anchor rows:",
+      firstRowValues ? "First✓" : "First✗",
+      lastRowValues ? "Last✓" : "Last✗",
+    );
 
     let extractedText = "";
     let useRealAPI = false;
@@ -282,8 +645,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Parse the extracted text into a structured table
-    const tableData = parseTextToTable(extractedText);
+    // Parse the extracted text into a structured table with user-specified dimensions and anchor rows
+    const tableData = parseTextToTable(
+      extractedText,
+      expectedColumns,
+      expectedRows,
+      firstRowValues,
+      lastRowValues,
+    );
 
     console.log("Extracted table data:", JSON.stringify(tableData, null, 2));
 
