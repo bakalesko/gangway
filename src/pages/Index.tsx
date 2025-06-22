@@ -66,8 +66,6 @@ const Index = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Helper functions for table sizing
-  const [globalColumnWidth, setGlobalColumnWidth] = useState(120);
-  const [globalRowHeight, setGlobalRowHeight] = useState(40);
 
   const adjustGlobalColumnWidth = (delta: number) => {
     setGlobalColumnWidth((prev) => Math.max(80, prev + delta));
