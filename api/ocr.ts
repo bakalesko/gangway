@@ -331,17 +331,31 @@ function parseTextToTable(
       }
 
       if (cellValue && cellValue.trim()) {
+        // Always try to treat as numeric value first
         if (isValidNumber(cellValue)) {
           row[colIndex] = {
-            value: cleanNumericValue(cellValue),
+            value: cellValue.trim(), // Keep original format for pattern analysis
             interpolated: false,
           };
         } else {
-          // Non-numeric values (like headers)
-          row[colIndex] = {
-            value: cellValue.trim(),
-            interpolated: false,
-          };
+          // For first row (headers), keep as-is, otherwise try to extract numbers
+          if (rowIndex === 0) {
+            row[colIndex] = {
+              value: cellValue.trim(),
+              interpolated: false,
+            };
+          } else {
+            // Try to extract numeric parts from mixed content
+            const numericMatch = cellValue.match(/[\d.,]+/);
+            if (numericMatch && isValidNumber(numericMatch[0])) {
+              row[colIndex] = {
+                value: numericMatch[0].trim(),
+                interpolated: false,
+              };
+            } else {
+              row[colIndex] = null; // Will be interpolated later
+            }
+          }
         }
       } else {
         row[colIndex] = null; // Will be interpolated later
