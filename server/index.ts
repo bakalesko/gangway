@@ -429,8 +429,25 @@ function parseTextToTable(
       if (cellValue && cellValue.trim()) {
         // Always try to treat as numeric value first
         if (isValidNumber(cellValue)) {
+          let cleanedValue = cellValue.trim();
+
+          // For non-header rows, clean and format numeric values
+          if (rowIndex > 0) {
+            const numValue = parseFloat(cleanNumericValue(cellValue));
+            if (!isNaN(numValue)) {
+              // Check if it's a decimal number
+              if (numValue % 1 !== 0) {
+                // Round to 1 decimal place for non-integers
+                cleanedValue = numValue.toFixed(1);
+              } else {
+                // Keep as integer
+                cleanedValue = Math.round(numValue).toString();
+              }
+            }
+          }
+
           row[colIndex] = {
-            value: cellValue.trim(), // Keep original format for pattern analysis
+            value: cleanedValue,
             interpolated: false,
           };
         } else {
@@ -442,12 +459,23 @@ function parseTextToTable(
             };
           } else {
             // Try to extract numeric parts from mixed content
-            const numericMatch = cellValue.match(/[\d.,]+/);
+            const numericMatch = cellValue.match(/[\d.,\-]+/);
             if (numericMatch && isValidNumber(numericMatch[0])) {
-              row[colIndex] = {
-                value: numericMatch[0].trim(),
-                interpolated: false,
-              };
+              const numValue = parseFloat(cleanNumericValue(numericMatch[0]));
+              if (!isNaN(numValue)) {
+                let cleanedValue;
+                if (numValue % 1 !== 0) {
+                  cleanedValue = numValue.toFixed(1);
+                } else {
+                  cleanedValue = Math.round(numValue).toString();
+                }
+                row[colIndex] = {
+                  value: cleanedValue,
+                  interpolated: false,
+                };
+              } else {
+                row[colIndex] = null; // Will be interpolated later
+              }
             } else {
               row[colIndex] = null; // Will be interpolated later
             }
