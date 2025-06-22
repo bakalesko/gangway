@@ -584,60 +584,82 @@ const Index = () => {
           </Card>
         )}
 
-        {/* Error Log Section */}
-        {errorLogs.length > 0 && (
-          <Card className="mt-8 shadow-lg border-red-200">
-            <CardHeader className="bg-red-50">
-              <CardTitle className="flex items-center gap-2 text-red-800">
-                <AlertCircle className="h-5 w-5" />
-                Error Log
-                <Button
-                  onClick={() => setErrorLogs([])}
-                  variant="outline"
-                  size="sm"
-                  className="ml-auto"
-                >
-                  Clear Log
+        {/* Error Log Section - Always visible now for debugging */}
+        <Card className="mt-8 shadow-lg border-orange-200">
+          <CardHeader className="bg-orange-50">
+            <CardTitle className="flex items-center gap-2 text-orange-800">
+              <AlertCircle className="h-5 w-5" />
+              System Status & Error Log
+              <div className="ml-auto flex gap-2">
+                <Button onClick={checkSystemStatus} variant="outline" size="sm">
+                  Check System Status
                 </Button>
-              </CardTitle>
-              <CardDescription className="text-red-600">
-                Connection and processing errors are logged here for debugging
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {errorLogs.length > 0 && (
+                  <Button
+                    onClick={() => setErrorLogs([])}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Clear Log
+                  </Button>
+                )}
+              </div>
+            </CardTitle>
+            <CardDescription className="text-orange-600">
+              {errorLogs.length > 0
+                ? "Connection and processing errors are logged here for debugging"
+                : "No errors logged yet. Click 'Check System Status' to test the connection."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-4">
+            {errorLogs.length > 0 ? (
+              <div className="space-y-2 max-h-40 overflow-y-auto mb-4">
                 {errorLogs.map((log, index) => (
                   <div
                     key={index}
-                    className="text-sm font-mono p-2 bg-red-50 border border-red-100 rounded text-red-800"
+                    className={cn(
+                      "text-sm font-mono p-2 border rounded",
+                      log.includes("✅")
+                        ? "bg-green-50 border-green-200 text-green-800"
+                        : "bg-red-50 border-red-200 text-red-800",
+                    )}
                   >
                     {log}
                   </div>
                 ))}
               </div>
-              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                <p className="text-sm text-yellow-800">
-                  <strong>Common solutions:</strong>
-                </p>
-                <ul className="text-sm text-yellow-700 mt-1 space-y-1">
-                  <li>
-                    • Check if Google Cloud credentials are properly configured
-                  </li>
-                  <li>
-                    • Verify that the Google Vision API is enabled in your
-                    project
-                  </li>
-                  <li>
-                    • Ensure the uploaded image contains clear, readable text
-                  </li>
-                  <li>
-                    • Try uploading a different image format (JPG, PNG, PDF)
-                  </li>
-                </ul>
+            ) : (
+              <div className="text-sm text-muted-foreground mb-4 p-3 bg-gray-50 border rounded">
+                No system errors recorded. Use the "Check System Status" button
+                to test connectivity.
               </div>
-            </CardContent>
-          </Card>
-        )}
+            )}
+
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
+              <p className="text-sm text-yellow-800">
+                <strong>Troubleshooting steps:</strong>
+              </p>
+              <ul className="text-sm text-yellow-700 mt-1 space-y-1">
+                <li>
+                  • <strong>For Google Vision API:</strong> Check if credentials
+                  are configured in environment variables
+                </li>
+                <li>
+                  • <strong>For Excel export:</strong> Ensure the API server is
+                  running and accessible
+                </li>
+                <li>
+                  • <strong>For image processing:</strong> Try different image
+                  formats (JPG, PNG, PDF)
+                </li>
+                <li>
+                  • <strong>Network issues:</strong> Check browser developer
+                  console for additional errors
+                </li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
