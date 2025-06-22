@@ -502,68 +502,10 @@ const Index = () => {
         {tableData && (
           <Card className="mt-8 shadow-lg">
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Extracted Table Data</span>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      // Select entire table programmatically
-                      const allCells = [];
-                      // Add headers
-                      for (let col = 0; col < tableData.headers.length; col++) {
-                        allCells.push(`-1-${col}`);
-                      }
-                      // Add all data cells
-                      for (let row = 0; row < tableData.rows.length; row++) {
-                        for (
-                          let col = 0;
-                          col < tableData.rows[row].length;
-                          col++
-                        ) {
-                          allCells.push(`${row}-${col}`);
-                        }
-                      }
-                      // Trigger selection via window event
-                      window.dispatchEvent(
-                        new CustomEvent("selectAllCells", { detail: allCells }),
-                      );
-                    }}
-                  >
-                    <MousePointer className="h-4 w-4 mr-1" />
-                    Select All
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={copyTableToClipboard}
-                  >
-                    <Copy className="h-4 w-4 mr-1" />
-                    Copy Table
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={downloadAsExcel}
-                    disabled={isDownloading}
-                  >
-                    {isDownloading ? (
-                      <>
-                        <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                        Downloading...
-                      </>
-                    ) : (
-                      <>
-                        <Download className="mr-1 h-4 w-4" />
-                        Excel
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardTitle>
+              <CardTitle>Extracted Table Data</CardTitle>
               <CardDescription>
-                Drag column/row borders to resize • Select cells with mouse •
-                Ctrl+A (select all) • Ctrl+C (copy selection)
+                Edit cell values • Adjust column widths and row heights with +/-
+                buttons • Copy or download the table
               </CardDescription>
             </CardHeader>
             <CardContent>
