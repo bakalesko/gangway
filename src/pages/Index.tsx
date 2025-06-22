@@ -53,6 +53,24 @@ const Index = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Check system status
+  const checkSystemStatus = async () => {
+    try {
+      const response = await fetch("/api/health");
+      if (response.ok) {
+        addErrorLog("✅ API server is reachable");
+      } else {
+        addErrorLog(
+          `❌ API server returned ${response.status}: ${response.statusText}`,
+        );
+      }
+    } catch (error) {
+      addErrorLog(
+        `❌ Cannot reach API server: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    }
+  };
+
   // File selection handler
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
