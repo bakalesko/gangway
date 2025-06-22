@@ -81,6 +81,11 @@ const Index = () => {
     setRowHeights((prev) => ({ ...prev, [index]: newHeight }));
   };
 
+  const resetTableSizing = () => {
+    setColumnWidths({});
+    setRowHeights({});
+  };
+
   // File selection handler
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
