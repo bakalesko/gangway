@@ -290,8 +290,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       credentialsFound: !!process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64,
       credentialsLength:
         process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64?.length || 0,
-      useRealAPI,
+      useRealAPI: true,
       extractedTextLength: extractedText.length,
+      error: null,
     };
 
     console.log("🔧 Debug info:", debugInfo);
@@ -300,7 +301,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       headers:
         tableData.length > 0 ? tableData[0].map((cell) => cell.value) : [],
       rows: tableData.slice(1),
-      source: useRealAPI ? "Google Vision API" : "Mock Data",
+      source: "Google Vision API",
       debug: debugInfo,
     });
   } catch (error) {
