@@ -634,9 +634,9 @@ const Index = () => {
                           key={index}
                           className="bg-muted font-semibold text-left border-r border-b border-border p-2 sticky top-0"
                           style={{
-                            width: getColumnWidth(index),
-                            minWidth: getColumnWidth(index),
-                            maxWidth: getColumnWidth(index),
+                            width: globalColumnWidth,
+                            minWidth: globalColumnWidth,
+                            maxWidth: globalColumnWidth,
                           }}
                         >
                           {header}
