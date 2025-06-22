@@ -370,8 +370,42 @@ const Index = () => {
                 </div>
               </div>
 
+              <Button
+                onClick={handleScanTable}
+                disabled={!selectedFile || isScanning}
+                className="w-full mt-6"
+                size="lg"
+              >
+                {isScanning ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Scanning...
+                  </>
+                ) : (
+                  <>
+                    <Scan className="mr-2 h-4 w-4" />
+                    Scan Table
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Anchor Rows Configuration */}
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                Anchor Rows for Interpolation
+              </CardTitle>
+              <CardDescription>
+                Define first and last row values for better interpolation when
+                OCR misses data
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
               {/* Table Configuration */}
-              <div className="mt-6 p-4 bg-muted/30 rounded-lg border">
+              <div className="mb-6 p-4 bg-muted/30 rounded-lg border">
                 <div className="flex items-center gap-2 mb-3">
                   <Settings className="h-4 w-4" />
                   <Label className="text-sm font-medium">
@@ -421,138 +455,45 @@ const Index = () => {
                 </p>
               </div>
 
-              {/* Anchor Rows Configuration */}
-              <div className="mt-4 p-4 bg-blue-50/50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <div className="flex items-center gap-2 mb-3">
-                  <Settings className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                  <Label className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                    Anchor Rows for Interpolation
+              {/* Anchor Values */}
+              <div className="space-y-3">
+                <div>
+                  <Label
+                    htmlFor="firstRow"
+                    className="text-xs text-blue-700 dark:text-blue-300"
+                  >
+                    First Row (comma or space separated)
                   </Label>
+                  <Input
+                    id="firstRow"
+                    type="text"
+                    placeholder="e.g. 1, 5.2, 10.5, 15.8, ..."
+                    value={firstRowValues}
+                    onChange={(e) => setFirstRowValues(e.target.value)}
+                    className="mt-1 border-blue-200 focus:border-blue-400 dark:border-blue-700"
+                  />
                 </div>
-                <div className="space-y-3">
-                  <div>
-                    <Label
-                      htmlFor="firstRow"
-                      className="text-xs text-blue-700 dark:text-blue-300"
-                    >
-                      First Row (comma or space separated)
-                    </Label>
-                    <Input
-                      id="firstRow"
-                      type="text"
-                      placeholder="e.g. 1, 5.2, 10.5, 15.8, ..."
-                      value={firstRowValues}
-                      onChange={(e) => setFirstRowValues(e.target.value)}
-                      className="mt-1 border-blue-200 focus:border-blue-400 dark:border-blue-700"
-                    />
-                  </div>
-                  <div>
-                    <Label
-                      htmlFor="lastRow"
-                      className="text-xs text-blue-700 dark:text-blue-300"
-                    >
-                      Last Row (comma or space separated)
-                    </Label>
-                    <Input
-                      id="lastRow"
-                      type="text"
-                      placeholder="e.g. 24, 127.4, 245.2, 368.9, ..."
-                      value={lastRowValues}
-                      onChange={(e) => setLastRowValues(e.target.value)}
-                      className="mt-1 border-blue-200 focus:border-blue-400 dark:border-blue-700"
-                    />
-                  </div>
+                <div>
+                  <Label
+                    htmlFor="lastRow"
+                    className="text-xs text-blue-700 dark:text-blue-300"
+                  >
+                    Last Row (comma or space separated)
+                  </Label>
+                  <Input
+                    id="lastRow"
+                    type="text"
+                    placeholder="e.g. 24, 127.4, 245.2, 368.9, ..."
+                    value={lastRowValues}
+                    onChange={(e) => setLastRowValues(e.target.value)}
+                    className="mt-1 border-blue-200 focus:border-blue-400 dark:border-blue-700"
+                  />
                 </div>
-                <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
-                  💡 When OCR misses entire rows, these values will be used as
-                  anchors for interpolation
-                </p>
               </div>
-
-              <Button
-                onClick={handleScanTable}
-                disabled={!selectedFile || isScanning}
-                className="w-full mt-6"
-                size="lg"
-              >
-                {isScanning ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Scanning...
-                  </>
-                ) : (
-                  <>
-                    <Scan className="mr-2 h-4 w-4" />
-                    Scan Table
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Actions Section */}
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Download className="h-5 w-5" />
-                Export Options
-              </CardTitle>
-              <CardDescription>
-                Copy or download your processed table data
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <Button
-                  onClick={copyTableToClipboard}
-                  disabled={!tableData}
-                  variant="outline"
-                  className="w-full"
-                  size="lg"
-                >
-                  <Copy className="mr-2 h-4 w-4" />
-                  Copy Table
-                </Button>
-
-                <Button
-                  onClick={downloadAsExcel}
-                  disabled={!tableData || isDownloading}
-                  className="w-full"
-                  size="lg"
-                >
-                  {isDownloading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Downloading...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="mr-2 h-4 w-4" />
-                      Download as .xlsx
-                    </>
-                  )}
-                </Button>
-
-                {tableData && (
-                  <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-                    <p className="text-sm font-medium mb-2">
-                      Table Information:
-                    </p>
-                    <div className="text-sm text-muted-foreground space-y-1">
-                      <p>Columns: {tableData.headers.length}</p>
-                      <p>Rows: {tableData.rows.length}</p>
-                      <p>
-                        Interpolated cells:{" "}
-                        {
-                          tableData.rows
-                            .flat()
-                            .filter((cell) => cell.interpolated).length
-                        }
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-3">
+                💡 When OCR misses entire rows, these values will be used as
+                anchors for interpolation
+              </p>
             </CardContent>
           </Card>
         </div>
