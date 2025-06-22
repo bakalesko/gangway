@@ -74,7 +74,7 @@ try {
     }
   }
 } catch (error) {
-  console.error("❌ Error initializing Google Cloud Vision client:", error);
+  console.error("�� Error initializing Google Cloud Vision client:", error);
 }
 
 // Types
@@ -473,7 +473,13 @@ app.get("/api/health", (req, res) => {
   res.json({
     status: "OK",
     timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || "development",
     visionClientStatus: visionClient ? "Connected" : "Not configured",
+    credentialsStatus: {
+      base64Found: !!process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64,
+      base64Length: process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64?.length || 0,
+    },
+    message: "Lab Table Scanner API is running",
   });
 });
 
