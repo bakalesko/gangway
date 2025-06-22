@@ -96,6 +96,12 @@ const Index = () => {
     }
   };
 
+  // Add error to log
+  const addErrorLog = (error: string) => {
+    const timestamp = new Date().toLocaleTimeString();
+    setErrorLogs((prev) => [`[${timestamp}] ${error}`, ...prev.slice(0, 9)]);
+  };
+
   // OCR scan handler
   const handleScanTable = async () => {
     if (!selectedFile) {
@@ -121,70 +127,55 @@ const Index = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setTableData(data);
 
-        // Create detailed debug message
-        let message = "";
         if (data.source === "Google Vision API") {
-          message = "✅ Image scanned successfully with Google Vision API!";
+          setTableData(data);
+          setAlertMessage({
+            type: "success",
+            message: "✅ Image scanned successfully with Google Vision API!",
+          });
         } else {
+          // API returned mock data, log the errors
           const debug = data.debug || {};
-          message = `📊 Demo: Using mock data. Debug: Credentials=${debug.credentialsFound ? "Found" : "Missing"} (${debug.credentialsLength} chars), Vercel=${debug.vercel}, API=${debug.useRealAPI}, TextLen=${debug.extractedTextLength}`;
+          const errorDetails = [];
+
+          if (!debug.credentialsFound) {
+            errorDetails.push("Google Cloud credentials not configured");
+          }
+          if (!debug.useRealAPI) {
+            errorDetails.push("Failed to connect to Google Vision API");
+          }
+
+          const mainError = `Google Vision API connection failed: ${errorDetails.join(", ")}`;
+          addErrorLog(mainError);
+
+          setAlertMessage({
+            type: "error",
+            message:
+              "❌ Cannot process image - Google Vision API not available. Check error log below.",
+          });
         }
+      } else {
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: "Unknown API error" }));
+        const errorMsg = `API request failed: ${errorData.error || response.statusText}`;
+        addErrorLog(errorMsg);
 
         setAlertMessage({
-          type: "success",
-          message: message,
+          type: "error",
+          message:
+            "❌ Failed to process image. Check error log below for details.",
         });
-      } else {
-        throw new Error("API not available");
       }
     } catch (error) {
-      console.error("OCR Error:", error);
-      // Fallback to enhanced mock data
-      const mockData: TableData = {
-        headers: [
-          "Sample ID",
-          "pH Level",
-          "Temperature (°C)",
-          "Concentration",
-          "Notes",
-        ],
-        rows: [
-          [
-            { value: "S001", interpolated: false },
-            { value: "7.2", interpolated: true },
-            { value: "25.4", interpolated: false },
-            { value: "0.5 mg/L", interpolated: false },
-            { value: "Normal range", interpolated: false },
-          ],
-          [
-            { value: "S002", interpolated: false },
-            { value: "6.8", interpolated: false },
-            { value: "24.1", interpolated: true },
-            { value: "0.7 mg/L", interpolated: false },
-            { value: "Slightly elevated", interpolated: false },
-          ],
-          [
-            { value: "S003", interpolated: false },
-            { value: "7.0", interpolated: false },
-            { value: "25.8", interpolated: false },
-            { value: "0.4 mg/L", interpolated: true },
-            { value: "Within range", interpolated: false },
-          ],
-          [
-            { value: "S004", interpolated: false },
-            { value: "6.9", interpolated: true },
-            { value: "26.2", interpolated: false },
-            { value: "0.6 mg/L", interpolated: true },
-            { value: "High temp", interpolated: false },
-          ],
-        ],
-      };
-      setTableData(mockData);
+      const errorMsg = `Network error: ${error instanceof Error ? error.message : "Unknown error"}`;
+      addErrorLog(errorMsg);
+
       setAlertMessage({
-        type: "success",
-        message: "Demo: Enhanced mock data loaded (API not configured yet)",
+        type: "error",
+        message:
+          "❌ Cannot connect to processing server. Check error log below.",
       });
     } finally {
       setIsScanning(false);
