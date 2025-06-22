@@ -71,55 +71,110 @@ function interpolateValue(
   return "0";
 }
 
-// Helper function to parse text into structured table
-function parseTextToTable(text: string): TableCell[][] {
+// Helper function to parse text into structured table with fixed dimensions
+function parseTextToTable(
+  text: string,
+  expectedCols: number = 13,
+  expectedRows: number = 24,
+): TableCell[][] {
+  console.log(
+    `🎯 Parsing table with expected dimensions: ${expectedCols} columns x ${expectedRows} rows`,
+  );
+
   const lines = text.split("\n").filter((line) => line.trim().length > 0);
+  console.log(`📝 Found ${lines.length} non-empty lines in OCR text`);
+
+  // Try multiple parsing strategies for better accuracy
   const rawTable: (string | null)[][] = [];
 
-  // Parse lines into table structure
+  // Strategy 1: Split by multiple spaces or tabs (most common)
+  let parseStrategy = "multiple-spaces";
   for (const line of lines) {
     const cells = line
       .split(/\s{2,}|\t/)
       .map((cell) => cell.trim())
       .filter((cell) => cell.length > 0);
+
     if (cells.length > 0) {
       rawTable.push(cells);
     }
   }
 
-  if (rawTable.length === 0) {
-    return [];
-  }
+  // Strategy 2: If we don't have enough columns, try single space separation
+  const maxColsFound = Math.max(...rawTable.map((row) => row.length));
+  if (maxColsFound < expectedCols * 0.7) {
+    // If we have less than 70% of expected columns
+    console.log(
+      `🔄 Switching to single-space parsing strategy (found ${maxColsFound}/${expectedCols} columns)`,
+    );
+    parseStrategy = "single-spaces";
+    rawTable.length = 0; // Clear previous results
 
-  // Determine the maximum number of columns
-  const maxCols = Math.max(...rawTable.map((row) => row.length));
+    for (const line of lines) {
+      const cells = line
+        .split(/\s+/)
+        .map((cell) => cell.trim())
+        .filter((cell) => cell.length > 0);
 
-  // Normalize table structure and identify numeric cells
-  const normalizedTable: (TableCell | null)[][] = rawTable.map((row) => {
-    const normalizedRow: (TableCell | null)[] = [];
-    for (let i = 0; i < maxCols; i++) {
-      const cellValue = row[i];
-      if (cellValue && isValidNumber(cellValue)) {
-        normalizedRow[i] = {
-          value: cleanNumericValue(cellValue),
-          interpolated: false,
-        };
-      } else if (cellValue) {
-        // Non-numeric values (like headers)
-        normalizedRow[i] = {
-          value: cellValue,
-          interpolated: false,
-        };
-      } else {
-        normalizedRow[i] = null;
+      if (cells.length > 0) {
+        rawTable.push(cells);
       }
     }
-    return normalizedRow;
-  });
+  }
 
-  // Interpolate missing values
+  console.log(
+    `📊 Parse strategy: ${parseStrategy}, found ${rawTable.length} rows`,
+  );
+
+  if (rawTable.length === 0) {
+    console.log("⚠️ No table data found, creating empty structure");
+    return createEmptyTable(expectedCols, expectedRows);
+  }
+
+  // Use expected dimensions, but allow some flexibility
+  const targetCols = expectedCols;
+  const targetRows = Math.max(expectedRows, rawTable.length);
+
+  console.log(
+    `🎯 Target structure: ${targetCols} columns x ${targetRows} rows`,
+  );
+
+  // Initialize the normalized table with exact dimensions
+  const normalizedTable: (TableCell | null)[][] = [];
+
+  for (let rowIndex = 0; rowIndex < targetRows; rowIndex++) {
+    const row: (TableCell | null)[] = [];
+    const sourceRow = rawTable[rowIndex] || [];
+
+    for (let colIndex = 0; colIndex < targetCols; colIndex++) {
+      const cellValue = sourceRow[colIndex];
+
+      if (cellValue && cellValue.trim()) {
+        if (isValidNumber(cellValue)) {
+          row[colIndex] = {
+            value: cleanNumericValue(cellValue),
+            interpolated: false,
+          };
+        } else {
+          // Non-numeric values (like headers)
+          row[colIndex] = {
+            value: cellValue.trim(),
+            interpolated: false,
+          };
+        }
+      } else {
+        row[colIndex] = null; // Will be interpolated later
+      }
+    }
+    normalizedTable.push(row);
+  }
+
+  // Enhanced interpolation for missing values
+  console.log("🔧 Interpolating missing values...");
+  let interpolatedCount = 0;
+
   for (let rowIndex = 0; rowIndex < normalizedTable.length; rowIndex++) {
-    for (let colIndex = 0; colIndex < maxCols; colIndex++) {
+    for (let colIndex = 0; colIndex < targetCols; colIndex++) {
       if (!normalizedTable[rowIndex][colIndex]) {
         const interpolatedValue = interpolateValue(
           normalizedTable,
@@ -130,14 +185,52 @@ function parseTextToTable(text: string): TableCell[][] {
           value: interpolatedValue,
           interpolated: true,
         };
+        interpolatedCount++;
       }
     }
   }
 
-  // Convert to final format (remove null values)
-  return normalizedTable.map((row) =>
+  console.log(`✅ Interpolated ${interpolatedCount} missing cells`);
+
+  // Convert to final format (remove null values, but this shouldn't happen now)
+  const finalTable = normalizedTable.map((row) =>
     row.filter((cell): cell is TableCell => cell !== null),
   );
+
+  console.log(
+    `📋 Final table: ${finalTable.length} rows x ${finalTable[0]?.length || 0} columns`,
+  );
+  return finalTable;
+}
+
+// Helper function to create empty table structure
+function createEmptyTable(cols: number, rows: number): TableCell[][] {
+  console.log(`📝 Creating empty table structure: ${cols}x${rows}`);
+  const table: TableCell[][] = [];
+
+  // Create header row
+  const headers: TableCell[] = [];
+  for (let i = 0; i < cols; i++) {
+    headers.push({
+      value: `Column ${i + 1}`,
+      interpolated: true,
+    });
+  }
+  table.push(headers);
+
+  // Create data rows
+  for (let rowIndex = 1; rowIndex < rows; rowIndex++) {
+    const row: TableCell[] = [];
+    for (let colIndex = 0; colIndex < cols; colIndex++) {
+      row.push({
+        value: "",
+        interpolated: true,
+      });
+    }
+    table.push(row);
+  }
+
+  return table;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
