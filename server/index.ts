@@ -367,9 +367,9 @@ function parseTextToTable(
     return createEmptyTable(expectedCols, expectedRows);
   }
 
-  // Use expected dimensions, but allow some flexibility
+  // Use expected dimensions exactly as specified
   const targetCols = expectedCols;
-  const targetRows = Math.max(expectedRows, rawTable.length);
+  const targetRows = expectedRows; // Force exact row count
 
   console.log(
     `🎯 Target structure: ${targetCols} columns x ${targetRows} rows`,
