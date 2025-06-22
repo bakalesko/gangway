@@ -128,11 +128,13 @@ function interpolateValue(
   return "0";
 }
 
-// Helper function to parse text into structured table with fixed dimensions
+// Helper function to parse text into structured table with fixed dimensions and anchor rows
 function parseTextToTable(
   text: string,
   expectedCols: number = 13,
   expectedRows: number = 24,
+  firstRowValues?: string,
+  lastRowValues?: string,
 ): TableCell[][] {
   console.log(
     `🎯 Parsing table with expected dimensions: ${expectedCols} columns x ${expectedRows} rows`,
@@ -396,7 +398,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         );
       }
 
-      console.log("��� Initializing Google Vision client...");
+      console.log("🚀 Initializing Google Vision client...");
       const visionClient = new ImageAnnotatorClient({
         credentials: credentials,
       });
@@ -423,7 +425,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         );
         console.log("📝 First 200 chars:", extractedText.substring(0, 200));
       } else {
-        console.log("⚠️ No text detected in the image");
+        console.log("⚠��� No text detected in the image");
         throw new Error("No text detected in image");
       }
     } catch (error) {
