@@ -148,29 +148,37 @@ function interpolateValue(
       const progress = rowIndex / (totalRows - 1);
       const interpolatedValue = firstNum + (lastNum - firstNum) * progress;
 
-      // Format according to detected pattern
+      // Format according to detected pattern with proper rounding
       let formattedValue: string;
 
       if (isDecimal) {
-        formattedValue = interpolatedValue.toFixed(decimalPlaces);
+        // Always round to 1 decimal place for non-integer numbers
+        formattedValue = interpolatedValue.toFixed(1);
       } else {
         // Integer formatting with potential zero-padding
         const intValue = Math.round(interpolatedValue);
-        formattedValue = intValue.toString();
 
-        // Check if we need zero-padding (e.g., 19 -> 9 should be 09)
-        if (firstNum > 0 && lastNum > 0) {
-          const firstIntStr = Math.round(firstNum).toString();
-          const lastIntStr = Math.round(lastNum).toString();
+        // Check if the interpolated value should be decimal based on the result
+        if (Math.abs(interpolatedValue - intValue) > 0.1) {
+          // If the interpolated value is significantly non-integer, show as decimal
+          formattedValue = interpolatedValue.toFixed(1);
+        } else {
+          formattedValue = intValue.toString();
 
-          // If first number has more digits than last, pad the result
-          if (
-            firstIntStr.length > lastIntStr.length &&
-            firstIntStr.length > 1
-          ) {
-            formattedValue = intValue
-              .toString()
-              .padStart(firstIntStr.length, "0");
+          // Check if we need zero-padding (e.g., 19 -> 9 should be 09)
+          if (firstNum > 0 && lastNum > 0) {
+            const firstIntStr = Math.round(firstNum).toString();
+            const lastIntStr = Math.round(lastNum).toString();
+
+            // If first number has more digits than last, pad the result
+            if (
+              firstIntStr.length > lastIntStr.length &&
+              firstIntStr.length > 1
+            ) {
+              formattedValue = intValue
+                .toString()
+                .padStart(firstIntStr.length, "0");
+            }
           }
         }
       }
