@@ -542,11 +542,28 @@ const Index = () => {
                     <Copy className="h-4 w-4 mr-1" />
                     Copy Table
                   </Button>
+                  <Button
+                    size="sm"
+                    onClick={downloadAsExcel}
+                    disabled={isDownloading}
+                  >
+                    {isDownloading ? (
+                      <>
+                        <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                        Downloading...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="mr-1 h-4 w-4" />
+                        Excel
+                      </>
+                    )}
+                  </Button>
                 </div>
               </CardTitle>
               <CardDescription>
-                Edit any cell values as needed. Cells with light blue background
-                were interpolated by OCR. Drag borders to resize columns/rows.
+                Drag column/row borders to resize • Select cells with mouse •
+                Ctrl+A (select all) • Ctrl+C (copy selection)
               </CardDescription>
             </CardHeader>
             <CardContent>
