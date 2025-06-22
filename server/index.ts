@@ -94,7 +94,7 @@ function cleanNumericValue(value: string): string {
   return value.replace(/[,\s]/g, "").replace(/^-+|[\-\s]+$/g, "");
 }
 
-// Enhanced interpolation function with anchor rows support
+// Advanced numeric interpolation with digit pattern matching
 function interpolateValue(
   data: (TableCell | null)[][],
   rowIndex: number,
@@ -108,7 +108,7 @@ function interpolateValue(
   const firstAnchorValue = firstRowAnchor?.[colIndex];
   const lastAnchorValue = lastRowAnchor?.[colIndex];
 
-  // If we have both anchor values and they're numeric, use progressive interpolation
+  // Advanced numeric interpolation with pattern analysis
   if (
     firstAnchorValue &&
     lastAnchorValue &&
@@ -119,17 +119,69 @@ function interpolateValue(
     const lastNum = parseFloat(cleanNumericValue(lastAnchorValue));
 
     if (!isNaN(firstNum) && !isNaN(lastNum)) {
+      // Analyze number patterns from anchor values
+      const firstStr = firstAnchorValue.trim();
+      const lastStr = lastAnchorValue.trim();
+
+      // Determine if numbers are integers or decimals
+      const isDecimal = firstStr.includes(".") || lastStr.includes(".");
+
+      // Determine decimal places (if decimal)
+      let decimalPlaces = 0;
+      if (isDecimal) {
+        const firstDecimals = firstStr.includes(".")
+          ? firstStr.split(".")[1]?.length || 0
+          : 0;
+        const lastDecimals = lastStr.includes(".")
+          ? lastStr.split(".")[1]?.length || 0
+          : 0;
+        decimalPlaces = Math.max(firstDecimals, lastDecimals);
+      }
+
+      // Determine minimum digit count (for zero-padding)
+      const firstDigits = firstStr.replace(/[^0-9]/g, "").length;
+      const lastDigits = lastStr.replace(/[^0-9]/g, "").length;
+      const minDigits = Math.max(firstDigits, lastDigits);
+
       // Progressive interpolation based on row position
       const progress = rowIndex / (totalRows - 1);
       const interpolatedValue = firstNum + (lastNum - firstNum) * progress;
+
+      // Format according to detected pattern
+      let formattedValue: string;
+
+      if (isDecimal) {
+        formattedValue = interpolatedValue.toFixed(decimalPlaces);
+      } else {
+        // Integer formatting with potential zero-padding
+        const intValue = Math.round(interpolatedValue);
+        formattedValue = intValue.toString();
+
+        // Check if we need zero-padding (e.g., 19 -> 9 should be 09)
+        if (firstNum > 0 && lastNum > 0) {
+          const firstIntStr = Math.round(firstNum).toString();
+          const lastIntStr = Math.round(lastNum).toString();
+
+          // If first number has more digits than last, pad the result
+          if (
+            firstIntStr.length > lastIntStr.length &&
+            firstIntStr.length > 1
+          ) {
+            formattedValue = intValue
+              .toString()
+              .padStart(firstIntStr.length, "0");
+          }
+        }
+      }
+
       console.log(
-        `🎯 Anchor interpolation for row ${rowIndex}, col ${colIndex}: ${interpolatedValue.toFixed(2)}`,
+        `🎯 Smart interpolation for row ${rowIndex}, col ${colIndex}: ${formattedValue} (pattern: ${isDecimal ? "decimal" : "integer"}, digits: ${minDigits})`,
       );
-      return interpolatedValue.toFixed(2);
+      return formattedValue;
     }
   }
 
-  // Fallback to traditional nearest-neighbor interpolation
+  // Fallback to traditional nearest-neighbor interpolation with pattern matching
   let above: string | null = null;
   let below: string | null = null;
   let aboveIndex = -1;
@@ -153,22 +205,60 @@ function interpolateValue(
     }
   }
 
-  // Smart interpolation between found values
+  // Smart interpolation between found values with pattern analysis
   if (above && below && isValidNumber(above) && isValidNumber(below)) {
     const aboveNum = parseFloat(cleanNumericValue(above));
     const belowNum = parseFloat(cleanNumericValue(below));
 
     if (!isNaN(aboveNum) && !isNaN(belowNum)) {
+      // Analyze patterns from nearby values
+      const aboveStr = above.trim();
+      const belowStr = below.trim();
+
+      const isDecimal = aboveStr.includes(".") || belowStr.includes(".");
+      let decimalPlaces = 0;
+      if (isDecimal) {
+        const aboveDecimals = aboveStr.includes(".")
+          ? aboveStr.split(".")[1]?.length || 0
+          : 0;
+        const belowDecimals = belowStr.includes(".")
+          ? belowStr.split(".")[1]?.length || 0
+          : 0;
+        decimalPlaces = Math.max(aboveDecimals, belowDecimals);
+      }
+
       // Linear interpolation based on position between above and below
       const totalDistance = belowIndex - aboveIndex;
       const currentDistance = rowIndex - aboveIndex;
       const progress = currentDistance / totalDistance;
 
       const interpolatedValue = aboveNum + (belowNum - aboveNum) * progress;
+
+      // Format according to detected pattern
+      let formattedValue: string;
+      if (isDecimal) {
+        formattedValue = interpolatedValue.toFixed(decimalPlaces);
+      } else {
+        const intValue = Math.round(interpolatedValue);
+        formattedValue = intValue.toString();
+
+        // Check for zero-padding pattern
+        const aboveIntStr = Math.round(aboveNum).toString();
+        const belowIntStr = Math.round(belowNum).toString();
+        const maxLength = Math.max(aboveIntStr.length, belowIntStr.length);
+
+        if (
+          maxLength > 1 &&
+          (aboveStr.startsWith("0") || belowStr.startsWith("0"))
+        ) {
+          formattedValue = intValue.toString().padStart(maxLength, "0");
+        }
+      }
+
       console.log(
-        `📈 Linear interpolation for row ${rowIndex}, col ${colIndex}: ${interpolatedValue.toFixed(2)}`,
+        `📈 Pattern interpolation for row ${rowIndex}, col ${colIndex}: ${formattedValue}`,
       );
-      return interpolatedValue.toFixed(2);
+      return formattedValue;
     }
   }
 
