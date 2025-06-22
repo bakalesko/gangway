@@ -568,81 +568,59 @@ const Index = () => {
                 </Button>
               </div>
 
-              {/* Column Width Controls */}
+              {/* Table Size Controls */}
               <div className="border rounded-lg p-3 bg-muted/30 mb-4">
-                <h4 className="text-sm font-medium mb-2">Column Widths</h4>
-                <div className="flex gap-2 flex-wrap">
-                  {tableData.headers.map((header, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-1 text-xs"
+                <h4 className="text-sm font-medium mb-3">
+                  Table Size Controls
+                </h4>
+                <div className="flex gap-6 items-center">
+                  {/* Column Width Control */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Column Width:</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => adjustGlobalColumnWidth(-10)}
                     >
-                      <span className="min-w-[50px] truncate">
-                        {header.substring(0, 8)}:
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-6 w-6 p-0"
-                        onClick={() => adjustColumnWidth(index, -10)}
-                      >
-                        <Minus className="h-3 w-3" />
-                      </Button>
-                      <span className="min-w-[40px] text-center">
-                        {getColumnWidth(index)}px
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-6 w-6 p-0"
-                        onClick={() => adjustColumnWidth(index, 10)}
-                      >
-                        <Plus className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Row Height Controls */}
-              <div className="border rounded-lg p-3 bg-muted/30 mb-4">
-                <h4 className="text-sm font-medium mb-2">Row Heights</h4>
-                <div className="flex gap-2 flex-wrap">
-                  {Array.from(
-                    { length: Math.min(6, tableData.rows.length) },
-                    (_, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-1 text-xs"
-                      >
-                        <span className="min-w-[50px]">Row {index + 1}:</span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={() => adjustRowHeight(index, -5)}
-                        >
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <span className="min-w-[40px] text-center">
-                          {getRowHeight(index)}px
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={() => adjustRowHeight(index, 5)}
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ),
-                  )}
-                  {tableData.rows.length > 6 && (
-                    <span className="text-xs text-muted-foreground">
-                      ...and {tableData.rows.length - 6} more rows
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="min-w-[60px] text-center text-sm font-mono bg-background border rounded px-2 py-1">
+                      {globalColumnWidth}px
                     </span>
-                  )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => adjustGlobalColumnWidth(10)}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* Row Height Control */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Row Height:</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => adjustGlobalRowHeight(-5)}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="min-w-[50px] text-center text-sm font-mono bg-background border rounded px-2 py-1">
+                      {globalRowHeight}px
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => adjustGlobalRowHeight(5)}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
 
