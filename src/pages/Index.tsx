@@ -167,6 +167,12 @@ const Index = () => {
       formData.append("file", selectedFile);
       formData.append("expectedColumns", expectedColumns.toString());
       formData.append("expectedRows", expectedRows.toString());
+      if (firstRowValues.trim()) {
+        formData.append("firstRowValues", firstRowValues.trim());
+      }
+      if (lastRowValues.trim()) {
+        formData.append("lastRowValues", lastRowValues.trim());
+      }
 
       const response = await fetch("/api/ocr", {
         method: "POST",
