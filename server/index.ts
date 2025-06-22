@@ -293,7 +293,24 @@ function parseTextToTable(
     const sourceRow = rawTable[rowIndex] || [];
 
     for (let colIndex = 0; colIndex < targetCols; colIndex++) {
-      const cellValue = sourceRow[colIndex];
+      let cellValue = sourceRow[colIndex];
+
+      // Override with anchor values for first and last rows if provided
+      if (rowIndex === 0 && firstRowAnchor && firstRowAnchor[colIndex]) {
+        cellValue = firstRowAnchor[colIndex];
+        console.log(
+          `🎯 Using first row anchor for [0,${colIndex}]: ${cellValue}`,
+        );
+      } else if (
+        rowIndex === targetRows - 1 &&
+        lastRowAnchor &&
+        lastRowAnchor[colIndex]
+      ) {
+        cellValue = lastRowAnchor[colIndex];
+        console.log(
+          `🎯 Using last row anchor for [${rowIndex},${colIndex}]: ${cellValue}`,
+        );
+      }
 
       if (cellValue && cellValue.trim()) {
         if (isValidNumber(cellValue)) {
