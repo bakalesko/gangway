@@ -509,13 +509,95 @@ const Index = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <SimpleTable
-                headers={tableData.headers}
-                rows={tableData.rows}
-                onCellChange={updateCellValue}
-                onCopyTable={copyTableToClipboard}
-                onDownloadExcel={downloadAsExcel}
-              />
+              {/* Copy/Export Buttons */}
+              <div className="flex gap-2 mb-4">
+                <Button
+                  onClick={copyTableToClipboard}
+                  variant="outline"
+                  size="sm"
+                >
+                  <Copy className="h-4 w-4 mr-1" />
+                  Copy Table
+                </Button>
+                <Button
+                  onClick={downloadAsExcel}
+                  disabled={isDownloading}
+                  size="sm"
+                >
+                  {isDownloading ? (
+                    <>
+                      <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                      Downloading...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="mr-1 h-4 w-4" />
+                      Excel
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* Simple Table */}
+              <div className="border rounded-lg overflow-auto max-h-96 bg-background">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr>
+                      {tableData.headers.map((header, index) => (
+                        <th
+                          key={index}
+                          className="bg-muted font-semibold text-left border-r border-b border-border p-2 sticky top-0"
+                        >
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tableData.rows.map((row, rowIndex) => (
+                      <tr key={rowIndex}>
+                        {row.map((cell, cellIndex) => (
+                          <td
+                            key={cellIndex}
+                            className={cn(
+                              "border-r border-b border-border p-1",
+                              cell.interpolated &&
+                                "bg-blue-50 dark:bg-blue-950/20",
+                            )}
+                          >
+                            <input
+                              type="text"
+                              value={cell.value}
+                              onChange={(e) =>
+                                updateCellValue(
+                                  rowIndex,
+                                  cellIndex,
+                                  e.target.value,
+                                )
+                              }
+                              className={cn(
+                                "w-full px-2 py-1 bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-primary rounded text-sm",
+                                cell.interpolated &&
+                                  "bg-blue-50/50 dark:bg-blue-950/10",
+                              )}
+                            />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-4 text-xs text-muted-foreground">
+                📊 {tableData.rows.length} rows × {tableData.headers.length}{" "}
+                columns ���{" "}
+                {
+                  tableData.rows.flat().filter((cell) => cell.interpolated)
+                    .length
+                }{" "}
+                interpolated
+              </div>
             </CardContent>
           </Card>
         )}
