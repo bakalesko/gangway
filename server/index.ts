@@ -458,28 +458,47 @@ function parseTextToTable(
               interpolated: false,
             };
           } else {
-            // Try to extract numeric parts from mixed content
-            // Look for standalone numbers, avoiding ranges like "0.5-154"
-            const numericMatches = cellValue.match(/\b\d+\.?\d*\b/g);
-            if (numericMatches && numericMatches.length > 0) {
-              // Take the first clean number found
-              const firstMatch = numericMatches[0];
-              if (isValidNumber(firstMatch)) {
-                const numValue = parseFloat(firstMatch);
-                if (!isNaN(numValue)) {
-                  let cleanedValue;
-                  if (numValue % 1 !== 0) {
-                    cleanedValue = numValue.toFixed(1);
-                  } else {
-                    cleanedValue = Math.round(numValue).toString();
+            // Try to extract valid numbers from OCR text
+            let extractedNumber: string | null = null;
+
+            // First try to find a simple decimal number
+            const decimalMatch = cellValue.match(/^-?\d+\.\d+$/);
+            if (decimalMatch) {
+              extractedNumber = decimalMatch[0];
+            } else {
+              // Try to find integer
+              const intMatch = cellValue.match(/^-?\d+$/);
+              if (intMatch) {
+                extractedNumber = intMatch[0];
+              } else {
+                // Try to find first valid number in mixed content
+                const mixedMatches = cellValue.match(/-?\d+\.?\d*/g);
+                if (mixedMatches && mixedMatches.length > 0) {
+                  // Find the most reasonable number (avoid very long numbers that might be OCR errors)
+                  for (const match of mixedMatches) {
+                    if (match.length <= 8 && isValidNumber(match)) {
+                      // Reasonable length limit
+                      extractedNumber = match;
+                      break;
+                    }
                   }
-                  row[colIndex] = {
-                    value: cleanedValue,
-                    interpolated: false,
-                  };
-                } else {
-                  row[colIndex] = null;
                 }
+              }
+            }
+
+            if (extractedNumber && isValidNumber(extractedNumber)) {
+              const numValue = parseFloat(extractedNumber);
+              if (!isNaN(numValue)) {
+                let cleanedValue;
+                if (numValue % 1 !== 0) {
+                  cleanedValue = numValue.toFixed(1);
+                } else {
+                  cleanedValue = Math.round(numValue).toString();
+                }
+                row[colIndex] = {
+                  value: cleanedValue,
+                  interpolated: false,
+                };
               } else {
                 row[colIndex] = null;
               }
