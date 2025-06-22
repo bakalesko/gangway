@@ -292,14 +292,6 @@ export function InteractiveTable({
           <tbody>
             {rows.map((row, rowIndex) => (
               <tr key={rowIndex} style={{ height: getRowHeight(rowIndex) }}>
-                {/* Row resize handle */}
-                <td className="absolute left-0 w-full h-px">
-                  <div
-                    className="absolute bottom-0 left-0 right-0 h-1 cursor-row-resize bg-transparent hover:bg-primary/20 transition-colors"
-                    onMouseDown={(e) => handleRowResizeStart(e, rowIndex)}
-                  />
-                </td>
-
                 {row.map((cell, cellIndex) => {
                   const cellKey = `${rowIndex}-${cellIndex}`;
                   const isSelected = selectedCells.has(cellKey);
@@ -325,6 +317,17 @@ export function InteractiveTable({
                         handleCellMouseEnter(rowIndex, cellIndex)
                       }
                     >
+                      {/* Row resize handle */}
+                      {cellIndex === 0 && (
+                        <div
+                          className="absolute bottom-0 left-0 right-0 h-1 cursor-row-resize bg-transparent hover:bg-primary/20 transition-colors z-10"
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            handleRowResizeStart(e, rowIndex);
+                          }}
+                        />
+                      )}
+
                       <input
                         type="text"
                         value={cell.value}
