@@ -509,9 +509,11 @@ function parseTextToTable(
 
             if (extractedNumber && isValidNumber(extractedNumber)) {
               const numValue = parseFloat(extractedNumber);
-              if (!isNaN(numValue)) {
+              if (!isNaN(numValue) && numValue >= -1000 && numValue <= 10000) {
+                // Reasonable range check
                 let cleanedValue;
                 if (numValue % 1 !== 0) {
+                  // Always round decimals to 1 decimal place
                   cleanedValue = numValue.toFixed(1);
                 } else {
                   cleanedValue = Math.round(numValue).toString();
@@ -520,10 +522,19 @@ function parseTextToTable(
                   value: cleanedValue,
                   interpolated: false,
                 };
+                console.log(
+                  `✅ Cleaned "${cellValue}" -> "${cleanedValue}" at [${rowIndex},${colIndex}]`,
+                );
               } else {
+                console.log(
+                  `❌ Rejected "${cellValue}" (out of range: ${numValue}) at [${rowIndex},${colIndex}]`,
+                );
                 row[colIndex] = null;
               }
             } else {
+              console.log(
+                `❌ Failed to extract number from "${cellValue}" at [${rowIndex},${colIndex}]`,
+              );
               row[colIndex] = null; // Will be interpolated later
             }
           }
