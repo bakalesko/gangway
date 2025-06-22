@@ -690,14 +690,37 @@ const Index = () => {
                 </table>
               </div>
 
-              <div className="mt-4 text-xs text-muted-foreground">
-                📊 {tableData.rows.length} rows × {tableData.headers.length}{" "}
-                columns •{" "}
-                {
-                  tableData.rows.flat().filter((cell) => cell.interpolated)
-                    .length
-                }{" "}
-                interpolated
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded"></div>
+                    <span>Interpolated cells</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700 rounded"></div>
+                    <span>Missing rows</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-background border border-border rounded"></div>
+                    <span>Original values</span>
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  📊 {tableData.rows.length} rows × {tableData.headers.length}{" "}
+                  columns •{" "}
+                  {
+                    tableData.rows
+                      .flat()
+                      .filter((cell) => cell.interpolated && !cell.missingRow)
+                      .length
+                  }{" "}
+                  interpolated •{" "}
+                  {
+                    tableData.rows.flat().filter((cell) => cell.missingRow)
+                      .length
+                  }{" "}
+                  missing rows
+                </div>
               </div>
             </CardContent>
           </Card>
