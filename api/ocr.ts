@@ -3,7 +3,7 @@ import { IncomingForm } from "formidable";
 import { ImageAnnotatorClient } from "@google-cloud/vision";
 import fs from "fs";
 
-// Disable body parsing for multipart/form-data
+// Vercel configuration for multipart/form-data
 export const config = {
   api: {
     bodyParser: false,
