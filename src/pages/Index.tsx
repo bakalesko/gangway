@@ -60,19 +60,43 @@ const Index = () => {
       if (response.ok) {
         addErrorLog("✅ API server is reachable");
 
-        // Also test credentials
+        // Test credentials by making a simple OCR request without file
         try {
-          const credentialsResponse = await fetch("/api/test-credentials");
-          const credentialsData = await credentialsResponse.json();
+          const credentialsResponse = await fetch("/api/ocr", {
+            method: "POST",
+            body: new FormData(), // Empty form data to trigger credentials check
+          });
 
-          if (credentialsResponse.ok && credentialsData.status === "success") {
+          // Parse response safely
+          let credentialsData;
+          try {
+            credentialsData = await credentialsResponse.json();
+          } catch (parseError) {
+            addErrorLog("❌ OCR API returned invalid response format");
+            return;
+          }
+
+          if (
+            credentialsResponse.status === 400 &&
+            credentialsData.error?.includes("No file uploaded")
+          ) {
             addErrorLog(
-              "✅ Google Vision API credentials are properly configured",
+              "✅ Google Vision API credentials are detected and loaded",
             );
-            addErrorLog(`📋 Project: ${credentialsData.debug.projectId}`);
+            addErrorLog("📋 Ready to process images");
+          } else if (
+            credentialsResponse.status === 422 &&
+            credentialsData.error?.includes("not available")
+          ) {
+            addErrorLog(
+              "❌ Google Vision API credentials not properly configured",
+            );
+            if (credentialsData.details) {
+              addErrorLog(`🔍 Details: ${credentialsData.details}`);
+            }
           } else {
             addErrorLog(
-              `❌ Google Vision API credentials issue: ${credentialsData.message}`,
+              `⚠️ OCR API status: ${credentialsResponse.status} - ${credentialsData.error || "Unknown"}`,
             );
           }
         } catch (credError) {
