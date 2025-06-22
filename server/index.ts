@@ -541,7 +541,20 @@ app.post("/api/export", async (req, res) => {
     console.log(`Rows processed: ${tableData.length}`);
     console.log(`Columns: ${tableData.length > 0 ? tableData[0].length : 0}`);
   } catch (error) {
-    console.error("Export error:", error);
+    console.error("❌ Export error details:", error);
+    console.error("❌ Error type:", typeof error);
+    console.error(
+      "❌ Error name:",
+      error instanceof Error ? error.name : "Unknown",
+    );
+    console.error(
+      "❌ Error message:",
+      error instanceof Error ? error.message : "Unknown",
+    );
+    console.error(
+      "❌ Error stack:",
+      error instanceof Error ? error.stack : "No stack",
+    );
 
     // Handle specific error types
     if (error instanceof SyntaxError) {
@@ -558,6 +571,7 @@ app.post("/api/export", async (req, res) => {
 
     res.status(500).json({
       error: "Failed to generate Excel file. Please try again.",
+      details: error instanceof Error ? error.message : "Unknown error",
     });
   }
 });
