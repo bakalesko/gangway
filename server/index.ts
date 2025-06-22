@@ -310,11 +310,17 @@ app.post("/api/ocr", upload.single("file"), async (req, res) => {
       });
     }
 
+    // Get table dimensions from request
+    const expectedColumns = parseInt(req.body.expectedColumns) || 13;
+    const expectedRows = parseInt(req.body.expectedRows) || 24;
+
     console.log(
       "Processing file:",
       req.file.originalname,
       "Size:",
       req.file.size,
+      "Expected dimensions:",
+      `${expectedColumns}x${expectedRows}`,
     );
 
     let extractedText = "";
