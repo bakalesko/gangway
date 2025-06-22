@@ -259,6 +259,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    // Get table dimensions from request
+    const expectedColumns =
+      parseInt(
+        Array.isArray(fields.expectedColumns)
+          ? fields.expectedColumns[0]
+          : fields.expectedColumns,
+      ) || 13;
+    const expectedRows =
+      parseInt(
+        Array.isArray(fields.expectedRows)
+          ? fields.expectedRows[0]
+          : fields.expectedRows,
+      ) || 24;
+
     // Validate file type
     const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
     if (!allowedTypes.includes(file.mimetype || "")) {
