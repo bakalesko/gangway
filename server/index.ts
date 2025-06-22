@@ -459,22 +459,29 @@ function parseTextToTable(
             };
           } else {
             // Try to extract numeric parts from mixed content
-            const numericMatch = cellValue.match(/[\d.,\-]+/);
-            if (numericMatch && isValidNumber(numericMatch[0])) {
-              const numValue = parseFloat(cleanNumericValue(numericMatch[0]));
-              if (!isNaN(numValue)) {
-                let cleanedValue;
-                if (numValue % 1 !== 0) {
-                  cleanedValue = numValue.toFixed(1);
+            // Look for standalone numbers, avoiding ranges like "0.5-154"
+            const numericMatches = cellValue.match(/\b\d+\.?\d*\b/g);
+            if (numericMatches && numericMatches.length > 0) {
+              // Take the first clean number found
+              const firstMatch = numericMatches[0];
+              if (isValidNumber(firstMatch)) {
+                const numValue = parseFloat(firstMatch);
+                if (!isNaN(numValue)) {
+                  let cleanedValue;
+                  if (numValue % 1 !== 0) {
+                    cleanedValue = numValue.toFixed(1);
+                  } else {
+                    cleanedValue = Math.round(numValue).toString();
+                  }
+                  row[colIndex] = {
+                    value: cleanedValue,
+                    interpolated: false,
+                  };
                 } else {
-                  cleanedValue = Math.round(numValue).toString();
+                  row[colIndex] = null;
                 }
-                row[colIndex] = {
-                  value: cleanedValue,
-                  interpolated: false,
-                };
               } else {
-                row[colIndex] = null; // Will be interpolated later
+                row[colIndex] = null;
               }
             } else {
               row[colIndex] = null; // Will be interpolated later
