@@ -285,10 +285,25 @@ app.post("/api/ocr", upload.single("file"), async (req, res) => {
 
     console.log("Extracted table data:", JSON.stringify(tableData, null, 2));
 
+    // Debug response
+    const debugInfo = {
+      environment: process.env.NODE_ENV || "unknown",
+      credentialsFound: !!process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64,
+      credentialsLength:
+        process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64?.length || 0,
+      useRealAPI: true,
+      extractedTextLength: extractedText.length,
+      error: null,
+    };
+
+    console.log("🔧 Debug info:", debugInfo);
+
     res.json({
       headers:
         tableData.length > 0 ? tableData[0].map((cell) => cell.value) : [],
       rows: tableData.slice(1),
+      source: "Google Vision API",
+      debug: debugInfo,
     });
   } catch (error) {
     console.error("OCR processing error:", error);
