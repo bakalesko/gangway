@@ -567,54 +567,11 @@ const Index = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="border rounded-lg overflow-hidden">
-                <div className="overflow-auto max-h-96">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        {tableData.headers.map((header, index) => (
-                          <TableHead key={index} className="font-semibold">
-                            {header}
-                          </TableHead>
-                        ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {tableData.rows.map((row, rowIndex) => (
-                        <TableRow key={rowIndex}>
-                          {row.map((cell, cellIndex) => (
-                            <TableCell
-                              key={cellIndex}
-                              className={cn(
-                                "p-2",
-                                cell.interpolated &&
-                                  "bg-blue-50 dark:bg-blue-950/20",
-                              )}
-                            >
-                              <input
-                                type="text"
-                                value={cell.value}
-                                onChange={(e) =>
-                                  updateCellValue(
-                                    rowIndex,
-                                    cellIndex,
-                                    e.target.value,
-                                  )
-                                }
-                                className={cn(
-                                  "w-full min-w-[100px] px-2 py-1 bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-primary rounded",
-                                  cell.interpolated &&
-                                    "bg-blue-50/50 dark:bg-blue-950/10",
-                                )}
-                              />
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
+              <InteractiveTable
+                headers={tableData.headers}
+                rows={tableData.rows}
+                onCellChange={updateCellValue}
+              />
 
               <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
@@ -624,6 +581,10 @@ const Index = () => {
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 bg-background border border-border rounded"></div>
                   <span>Original values</span>
+                </div>
+                <div className="ml-auto text-xs">
+                  💡 Drag column/row borders to resize • Select cells and Ctrl+C
+                  to copy
                 </div>
               </div>
             </CardContent>
