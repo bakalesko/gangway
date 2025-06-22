@@ -200,10 +200,10 @@ export function InteractiveTable({
 
   React.useEffect(() => {
     if (isSelecting) {
-      document.addEventListener("mouseup", handleMouseUp);
-      return () => {
+      const cleanup = () =>
         document.removeEventListener("mouseup", handleMouseUp);
-      };
+      document.addEventListener("mouseup", handleMouseUp);
+      return cleanup;
     }
   }, [isSelecting, handleMouseUp]);
 
