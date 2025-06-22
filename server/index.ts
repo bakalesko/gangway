@@ -94,19 +94,52 @@ function cleanNumericValue(value: string): string {
   return value.replace(/[,\s]/g, "").replace(/^-+|[\-\s]+$/g, "");
 }
 
-// Helper function to interpolate missing values
+// Enhanced interpolation function with anchor rows support
 function interpolateValue(
   data: (TableCell | null)[][],
   rowIndex: number,
   colIndex: number,
+  firstRowAnchor?: string[],
+  lastRowAnchor?: string[],
 ): string {
+  const totalRows = data.length;
+
+  // Try to get anchor values for this column
+  const firstAnchorValue = firstRowAnchor?.[colIndex];
+  const lastAnchorValue = lastRowAnchor?.[colIndex];
+
+  // If we have both anchor values and they're numeric, use progressive interpolation
+  if (
+    firstAnchorValue &&
+    lastAnchorValue &&
+    isValidNumber(firstAnchorValue) &&
+    isValidNumber(lastAnchorValue)
+  ) {
+    const firstNum = parseFloat(cleanNumericValue(firstAnchorValue));
+    const lastNum = parseFloat(cleanNumericValue(lastAnchorValue));
+
+    if (!isNaN(firstNum) && !isNaN(lastNum)) {
+      // Progressive interpolation based on row position
+      const progress = rowIndex / (totalRows - 1);
+      const interpolatedValue = firstNum + (lastNum - firstNum) * progress;
+      console.log(
+        `🎯 Anchor interpolation for row ${rowIndex}, col ${colIndex}: ${interpolatedValue.toFixed(2)}`,
+      );
+      return interpolatedValue.toFixed(2);
+    }
+  }
+
+  // Fallback to traditional nearest-neighbor interpolation
   let above: string | null = null;
   let below: string | null = null;
+  let aboveIndex = -1;
+  let belowIndex = -1;
 
   // Look for value above
   for (let i = rowIndex - 1; i >= 0; i--) {
     if (data[i] && data[i][colIndex] && !data[i][colIndex]?.interpolated) {
       above = data[i][colIndex]?.value || null;
+      aboveIndex = i;
       break;
     }
   }
@@ -115,23 +148,47 @@ function interpolateValue(
   for (let i = rowIndex + 1; i < data.length; i++) {
     if (data[i] && data[i][colIndex] && !data[i][colIndex]?.interpolated) {
       below = data[i][colIndex]?.value || null;
+      belowIndex = i;
       break;
     }
   }
 
-  // Interpolate between above and below
-  if (above && below) {
+  // Smart interpolation between found values
+  if (above && below && isValidNumber(above) && isValidNumber(below)) {
     const aboveNum = parseFloat(cleanNumericValue(above));
     const belowNum = parseFloat(cleanNumericValue(below));
+
     if (!isNaN(aboveNum) && !isNaN(belowNum)) {
-      return ((aboveNum + belowNum) / 2).toString();
+      // Linear interpolation based on position between above and below
+      const totalDistance = belowIndex - aboveIndex;
+      const currentDistance = rowIndex - aboveIndex;
+      const progress = currentDistance / totalDistance;
+
+      const interpolatedValue = aboveNum + (belowNum - aboveNum) * progress;
+      console.log(
+        `📈 Linear interpolation for row ${rowIndex}, col ${colIndex}: ${interpolatedValue.toFixed(2)}`,
+      );
+      return interpolatedValue.toFixed(2);
     }
   }
 
-  // Use above value if available
-  if (above) return above;
+  // Use anchor values as fallback
+  if (firstAnchorValue && isValidNumber(firstAnchorValue)) {
+    console.log(
+      `⚓ Using first anchor for row ${rowIndex}, col ${colIndex}: ${firstAnchorValue}`,
+    );
+    return cleanNumericValue(firstAnchorValue);
+  }
 
-  // Use below value if available
+  if (lastAnchorValue && isValidNumber(lastAnchorValue)) {
+    console.log(
+      `⚓ Using last anchor for row ${rowIndex}, col ${colIndex}: ${lastAnchorValue}`,
+    );
+    return cleanNumericValue(lastAnchorValue);
+  }
+
+  // Use single nearby value if available
+  if (above) return above;
   if (below) return below;
 
   // Default fallback
@@ -272,7 +329,7 @@ function parseTextToTable(
 
 // Helper function to create empty table structure
 function createEmptyTable(cols: number, rows: number): TableCell[][] {
-  console.log(`📝 Creating empty table structure: ${cols}x${rows}`);
+  console.log(`���� Creating empty table structure: ${cols}x${rows}`);
   const table: TableCell[][] = [];
 
   // Create header row
