@@ -8,14 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { InteractiveTable } from "@/components/interactive-table";
 import {
   Upload,
   Download,
@@ -168,7 +161,7 @@ const Index = () => {
     } catch (error) {
       setAlertMessage({
         type: "error",
-        message: "��� Cannot connect to processing server.",
+        message: "❌ Cannot connect to processing server.",
       });
     } finally {
       setIsScanning(false);
