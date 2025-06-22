@@ -54,6 +54,10 @@ const Index = () => {
   } | null>(null);
   const [errorLogs, setErrorLogs] = useState<string[]>([]);
 
+  // Table configuration
+  const [expectedColumns, setExpectedColumns] = useState(13);
+  const [expectedRows, setExpectedRows] = useState(24);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check system status
