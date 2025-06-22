@@ -1,15 +1,30 @@
 # Google Vision API Troubleshooting Guide
 
+## Important: Development vs Production
+
+**⚠️ This application is designed for Vercel deployment.**
+
+- **Development Mode**: API endpoints may not work fully, but you can still test image uploads
+- **Production Mode**: Full functionality available when deployed to Vercel
+
 ## Problem: "Google Vision API not working" / "API not detected"
 
 ### Quick Diagnosis
 
 1. **Open the application in your browser**
 2. **Click "Check System Status"** in the Error Log section
-3. **Look for these messages:**
-   - ✅ API server is reachable
-   - ✅ Google Vision API credentials are properly configured
-   - 📋 Project: your-project-name
+3. **Expected messages in development:**
+   - ⚠️ API endpoints not available in development mode
+   - 💡 This is normal - the app is configured for Vercel deployment
+   - 🧪 Try uploading an image to test Google Vision API
+
+## Testing in Development Mode
+
+**To test Google Vision API in development:**
+
+1. Make sure `base64.txt` exists with your credentials
+2. Upload a test image using the "Scan Table" button
+3. Check the error log for detailed feedback
 
 ### If you see credential errors:
 
