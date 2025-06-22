@@ -134,17 +134,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (error instanceof SyntaxError) {
       return res.status(400).json({
         error: "Invalid JSON format in request body.",
+        details: error.message,
       });
     }
 
     if (error instanceof Error && error.message.includes("Invalid")) {
       return res.status(400).json({
         error: error.message,
+        details: error.stack,
       });
     }
 
+    // Log detailed error information
+    const errorDetails = {
+      message: error instanceof Error ? error.message : "Unknown error",
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString(),
+    };
+
+    console.error("Detailed export error:", errorDetails);
+
     res.status(500).json({
       error: "Failed to generate Excel file. Please try again.",
+      details: errorDetails.message,
     });
   }
 }

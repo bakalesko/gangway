@@ -49,8 +49,27 @@ const Index = () => {
     type: "success" | "error";
     message: string;
   } | null>(null);
+  const [errorLogs, setErrorLogs] = useState<string[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Check system status
+  const checkSystemStatus = async () => {
+    try {
+      const response = await fetch("/api/health");
+      if (response.ok) {
+        addErrorLog("✅ API server is reachable");
+      } else {
+        addErrorLog(
+          `❌ API server returned ${response.status}: ${response.statusText}`,
+        );
+      }
+    } catch (error) {
+      addErrorLog(
+        `❌ Cannot reach API server: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    }
+  };
 
   // File selection handler
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,6 +114,12 @@ const Index = () => {
     }
   };
 
+  // Add error to log
+  const addErrorLog = (error: string) => {
+    const timestamp = new Date().toLocaleTimeString();
+    setErrorLogs((prev) => [`[${timestamp}] ${error}`, ...prev.slice(0, 9)]);
+  };
+
   // OCR scan handler
   const handleScanTable = async () => {
     if (!selectedFile) {
@@ -120,70 +145,55 @@ const Index = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setTableData(data);
 
-        // Create detailed debug message
-        let message = "";
         if (data.source === "Google Vision API") {
-          message = "✅ Image scanned successfully with Google Vision API!";
+          setTableData(data);
+          setAlertMessage({
+            type: "success",
+            message: "✅ Image scanned successfully with Google Vision API!",
+          });
         } else {
+          // API returned mock data, log the errors
           const debug = data.debug || {};
-          message = `📊 Demo: Using mock data. Debug: Credentials=${debug.credentialsFound ? "Found" : "Missing"} (${debug.credentialsLength} chars), Vercel=${debug.vercel}, API=${debug.useRealAPI}, TextLen=${debug.extractedTextLength}`;
+          const errorDetails = [];
+
+          if (!debug.credentialsFound) {
+            errorDetails.push("Google Cloud credentials not configured");
+          }
+          if (!debug.useRealAPI) {
+            errorDetails.push("Failed to connect to Google Vision API");
+          }
+
+          const mainError = `Google Vision API connection failed: ${errorDetails.join(", ")}`;
+          addErrorLog(mainError);
+
+          setAlertMessage({
+            type: "error",
+            message:
+              "❌ Cannot process image - Google Vision API not available. Check error log below.",
+          });
         }
+      } else {
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: "Unknown API error" }));
+        const errorMsg = `API request failed: ${errorData.error || response.statusText}`;
+        addErrorLog(errorMsg);
 
         setAlertMessage({
-          type: "success",
-          message: message,
+          type: "error",
+          message:
+            "❌ Failed to process image. Check error log below for details.",
         });
-      } else {
-        throw new Error("API not available");
       }
     } catch (error) {
-      console.error("OCR Error:", error);
-      // Fallback to enhanced mock data
-      const mockData: TableData = {
-        headers: [
-          "Sample ID",
-          "pH Level",
-          "Temperature (°C)",
-          "Concentration",
-          "Notes",
-        ],
-        rows: [
-          [
-            { value: "S001", interpolated: false },
-            { value: "7.2", interpolated: true },
-            { value: "25.4", interpolated: false },
-            { value: "0.5 mg/L", interpolated: false },
-            { value: "Normal range", interpolated: false },
-          ],
-          [
-            { value: "S002", interpolated: false },
-            { value: "6.8", interpolated: false },
-            { value: "24.1", interpolated: true },
-            { value: "0.7 mg/L", interpolated: false },
-            { value: "Slightly elevated", interpolated: false },
-          ],
-          [
-            { value: "S003", interpolated: false },
-            { value: "7.0", interpolated: false },
-            { value: "25.8", interpolated: false },
-            { value: "0.4 mg/L", interpolated: true },
-            { value: "Within range", interpolated: false },
-          ],
-          [
-            { value: "S004", interpolated: false },
-            { value: "6.9", interpolated: true },
-            { value: "26.2", interpolated: false },
-            { value: "0.6 mg/L", interpolated: true },
-            { value: "High temp", interpolated: false },
-          ],
-        ],
-      };
-      setTableData(mockData);
+      const errorMsg = `Network error: ${error instanceof Error ? error.message : "Unknown error"}`;
+      addErrorLog(errorMsg);
+
       setAlertMessage({
-        type: "success",
-        message: "Demo: Enhanced mock data loaded (API not configured yet)",
+        type: "error",
+        message:
+          "❌ Cannot connect to processing server. Check error log below.",
       });
     } finally {
       setIsScanning(false);
@@ -263,11 +273,31 @@ const Index = () => {
         const errorData = await response
           .json()
           .catch(() => ({ error: "Unknown error" }));
+        const errorMsg = `Excel export failed (${response.status}): ${errorData.error || response.statusText}`;
+        addErrorLog(errorMsg);
         throw new Error(errorData.error || "Failed to export data");
+      }
+
+      // Check if response is actually Excel file
+      const contentType = response.headers.get("Content-Type");
+      if (
+        !contentType?.includes("spreadsheetml") &&
+        !contentType?.includes("excel")
+      ) {
+        const errorMsg = `Invalid response type: ${contentType}. Expected Excel file.`;
+        addErrorLog(errorMsg);
+        throw new Error("Server returned invalid file format");
       }
 
       // Create download link
       const blob = await response.blob();
+
+      if (blob.size === 0) {
+        const errorMsg = "Excel export returned empty file";
+        addErrorLog(errorMsg);
+        throw new Error("Generated file is empty");
+      }
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -291,16 +321,17 @@ const Index = () => {
 
       setAlertMessage({
         type: "success",
-        message: "Excel file downloaded successfully!",
+        message: `Excel file "${filename}" downloaded successfully!`,
       });
     } catch (error) {
       console.error("Export Error:", error);
+      const errorMsg =
+        error instanceof Error ? error.message : "Unknown download error";
+      addErrorLog(`Excel download failed: ${errorMsg}`);
+
       setAlertMessage({
         type: "error",
-        message:
-          error instanceof Error
-            ? error.message
-            : "Failed to download file. Please try again.",
+        message: "❌ Excel download failed. Check error log below for details.",
       });
     } finally {
       setIsDownloading(false);
@@ -552,6 +583,83 @@ const Index = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Error Log Section - Always visible now for debugging */}
+        <Card className="mt-8 shadow-lg border-orange-200">
+          <CardHeader className="bg-orange-50">
+            <CardTitle className="flex items-center gap-2 text-orange-800">
+              <AlertCircle className="h-5 w-5" />
+              System Status & Error Log
+              <div className="ml-auto flex gap-2">
+                <Button onClick={checkSystemStatus} variant="outline" size="sm">
+                  Check System Status
+                </Button>
+                {errorLogs.length > 0 && (
+                  <Button
+                    onClick={() => setErrorLogs([])}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Clear Log
+                  </Button>
+                )}
+              </div>
+            </CardTitle>
+            <CardDescription className="text-orange-600">
+              {errorLogs.length > 0
+                ? "Connection and processing errors are logged here for debugging"
+                : "No errors logged yet. Click 'Check System Status' to test the connection."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-4">
+            {errorLogs.length > 0 ? (
+              <div className="space-y-2 max-h-40 overflow-y-auto mb-4">
+                {errorLogs.map((log, index) => (
+                  <div
+                    key={index}
+                    className={cn(
+                      "text-sm font-mono p-2 border rounded",
+                      log.includes("✅")
+                        ? "bg-green-50 border-green-200 text-green-800"
+                        : "bg-red-50 border-red-200 text-red-800",
+                    )}
+                  >
+                    {log}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground mb-4 p-3 bg-gray-50 border rounded">
+                No system errors recorded. Use the "Check System Status" button
+                to test connectivity.
+              </div>
+            )}
+
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
+              <p className="text-sm text-yellow-800">
+                <strong>Troubleshooting steps:</strong>
+              </p>
+              <ul className="text-sm text-yellow-700 mt-1 space-y-1">
+                <li>
+                  • <strong>For Google Vision API:</strong> Check if credentials
+                  are configured in environment variables
+                </li>
+                <li>
+                  • <strong>For Excel export:</strong> Ensure the API server is
+                  running and accessible
+                </li>
+                <li>
+                  • <strong>For image processing:</strong> Try different image
+                  formats (JPG, PNG, PDF)
+                </li>
+                <li>
+                  • <strong>Network issues:</strong> Check browser developer
+                  console for additional errors
+                </li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
