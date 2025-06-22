@@ -500,11 +500,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Parse the extracted text into a structured table with user-specified dimensions
+    // Parse the extracted text into a structured table with user-specified dimensions and anchor rows
     const tableData = parseTextToTable(
       extractedText,
       expectedColumns,
       expectedRows,
+      firstRowValues,
+      lastRowValues,
     );
 
     console.log("Extracted table data:", JSON.stringify(tableData, null, 2));
