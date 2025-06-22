@@ -19,6 +19,7 @@ import {
   Scan,
   Loader2,
   Settings,
+  MousePointer,
 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
