@@ -190,12 +190,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Try to use Google Cloud Vision API if credentials are available
     try {
-      if (!ImageAnnotatorClient) {
-        throw new Error(
-          "Google Cloud Vision client not available - dependency missing",
-        );
-      }
-
       if (!process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64) {
         throw new Error(
           "GOOGLE_CLOUD_CREDENTIALS_BASE64 environment variable not found",
