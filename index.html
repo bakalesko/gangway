@@ -3,12 +3,41 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hello world project</title>
+    <title>Lab Table Scanner</title>
+    <meta
+      name="description"
+      content="Transform handwritten lab tables into digital data"
+    />
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div
+        style="
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+          font-family: system-ui;
+        "
+      >
+        <div style="text-align: center">
+          <div style="margin-bottom: 16px">🔬</div>
+          <div>Loading Lab Table Scanner...</div>
+        </div>
+      </div>
+    </div>
 
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Basic error handling for production debugging
+      window.addEventListener("error", function (e) {
+        console.error("Global error:", e.error);
+      });
+
+      window.addEventListener("unhandledrejection", function (e) {
+        console.error("Unhandled promise rejection:", e.reason);
+      });
+    </script>
   </body>
 </html>
