@@ -357,7 +357,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Get table dimensions from request
+    // Get table dimensions and anchor values from request
     const expectedColumns =
       parseInt(
         Array.isArray(fields.expectedColumns)
@@ -370,6 +370,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           ? fields.expectedRows[0]
           : fields.expectedRows,
       ) || 24;
+    const firstRowValues = Array.isArray(fields.firstRowValues)
+      ? fields.firstRowValues[0]
+      : fields.firstRowValues;
+    const lastRowValues = Array.isArray(fields.lastRowValues)
+      ? fields.lastRowValues[0]
+      : fields.lastRowValues;
 
     // Validate file type
     const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
