@@ -123,7 +123,10 @@ const Index = () => {
         setTableData(data);
         setAlertMessage({
           type: "success",
-          message: "Image scanned successfully with Google Vision API!",
+          message:
+            data.source === "Google Vision API"
+              ? "✅ Image scanned successfully with Google Vision API!"
+              : "📊 Demo: Enhanced mock data loaded (Google Vision API credentials not configured)",
         });
       } else {
         throw new Error("API not available");
