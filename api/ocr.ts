@@ -186,6 +186,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       "- GOOGLE_CLOUD_CREDENTIALS_BASE64 exists:",
       !!process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64,
     );
+    console.log(
+      "- GOOGLE_CLOUD_CREDENTIALS_BASE64 length:",
+      process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64?.length || 0,
+    );
     console.log("- NODE_ENV:", process.env.NODE_ENV);
     console.log("- VERCEL:", process.env.VERCEL);
 
