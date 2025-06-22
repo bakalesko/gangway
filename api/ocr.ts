@@ -272,12 +272,25 @@ S005\t7.1\t25.0\t0.6 mg/L\tOptimal conditions`;
 
     console.log("Extracted table data:", JSON.stringify(tableData, null, 2));
 
+    // Debug response
+    const debugInfo = {
+      environment: process.env.NODE_ENV || "unknown",
+      vercel: !!process.env.VERCEL,
+      credentialsFound: !!process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64,
+      credentialsLength:
+        process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64?.length || 0,
+      useRealAPI,
+      extractedTextLength: extractedText.length,
+    };
+
+    console.log("🔧 Debug info:", debugInfo);
+
     res.json({
       headers:
         tableData.length > 0 ? tableData[0].map((cell) => cell.value) : [],
       rows: tableData.slice(1),
       source: useRealAPI ? "Google Vision API" : "Mock Data",
-      credentialsFound: !!process.env.GOOGLE_CLOUD_CREDENTIALS_BASE64,
+      debug: debugInfo,
     });
   } catch (error) {
     console.error("OCR processing error:", error);
